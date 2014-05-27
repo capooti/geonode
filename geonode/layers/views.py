@@ -175,8 +175,18 @@ def layer_upload(request, template='upload/layer_upload.html'):
 def layer_detail(request, layername, template='layers/layer_detail.html'):
     layer = _resolve_layer(request, layername, 'layers.view_layer', _PERMISSION_MSG_VIEW)
 
-    maplayer = GXPLayer(name = layer.typename, ows_url = ogc_server_settings.public_url + "wms", layer_params=json.dumps( layer.attribute_config()))
+    # maplayer = GXPLayer(name = layer.typename, ows_url = ogc_server_settings.public_url + "wms", layer_params=json.dumps( layer.attribute_config()))
 
+    config = layer.attribute_config()
+    # TODO we need to remove this dependency some way
+    #import ipdb;ipdb.set_trace()
+    if layer.service_set.count() == 0:
+        maplayer = GXPLayer(name = layer.typename, ows_url = layer.ows_url, layer_params=json.dumps( config))
+    else:
+        service = layer.service_set.all()[0]
+        source_params = {"ptype":service.ptype, "remote": True, "url": service.base_url, "name": service.name}
+        maplayer = GXPLayer(name = layer.typename, ows_url = layer.ows_url, layer_params=json.dumps( config), source_params=json.dumps(source_params))
+  
     layer.srid_url = "http://www.spatialreference.org/ref/" + layer.srid.replace(':','/').lower() + "/"
 
     signals.pre_save.disconnect(geoserver_pre_save, sender=Layer)
@@ -497,19 +507,26 @@ def layer_replace(request, layername, template='layers/layer_replace.html'):
 
 @login_required
 def layer_remove(request, layername, template='layers/layer_remove.html'):
-    layer = _resolve_layer(request, layername, 'layers.delete_layer',
-                           _PERMISSION_MSG_DELETE)
+    
+    try:
+        layer = _resolve_layer(request, layername, 'layers.delete_layer',
+                               _PERMISSION_MSG_DELETE)
 
-    if (request.method == 'GET'):
-        return render_to_response(template,RequestContext(request, {
-            "layer": layer
-        }))
-    if (request.method == 'POST'):
-        layer.delete()
-        return HttpResponseRedirect(reverse("layer_browse"))
-    else:
-        return HttpResponse("Not allowed",status=403)
-
+        if (request.method == 'GET'):
+            return render_to_response(template,RequestContext(request, {
+                "layer": layer
+            }))
+        if (request.method == 'POST'):
+            layer.delete()
+            return HttpResponseRedirect(reverse("layer_browse"))
+        else:
+            return HttpResponse("Not allowed",status=403)
+    except PermissionDenied:
+        return HttpResponse(
+                'You are not allowed to delete this layer',
+                mimetype="text/plain",
+                status=401
+        )
 
 def layer_batch_download(request):
     """

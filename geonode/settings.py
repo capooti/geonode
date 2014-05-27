@@ -191,7 +191,7 @@ INSTALLED_APPS = (
     'agon_ratings',
     'notification',
     'announcements',
-    'actstream',
+    #'actstream',
     'user_messages',
 
     # GeoNode internal apps
@@ -349,7 +349,8 @@ AGON_RATINGS_CATEGORY_CHOICES = {
 
 # Activity Stream
 ACTSTREAM_SETTINGS = {
-    'MODELS': ('auth.user', 'layers.layer', 'maps.map', 'dialogos.comment', 'documents.document'),
+    'MODELS': ('auth.user', 'layers.layer', 'maps.map', 'dialogos.comment', 
+    'documents.document'),
     'FETCH_RELATIONS': True,
     'USE_PREFETCH': False,
     'USE_JSONFIELD': True,
