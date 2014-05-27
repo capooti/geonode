@@ -496,7 +496,7 @@ class Link(models.Model):
     link_type = models.CharField(max_length=255, choices = [(x, x) for x in LINK_TYPES])
     name = models.CharField(max_length=255, help_text=_('For example "View in Google Earth"'))
     mime = models.CharField(max_length=255, help_text=_('For example "text/xml"'))
-    url = models.TextField(unique=True, max_length=1000)
+    url = models.TextField(max_length=1000)
 
     objects = LinkManager()
 

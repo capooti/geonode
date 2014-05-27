@@ -114,6 +114,7 @@ setup(name='GeoNode',
         "MultipartPostHandler",
         # translation
         "transifex-client",
+        "geonode-arcrest==10.2",
         ],
       zip_safe=False,
       )
