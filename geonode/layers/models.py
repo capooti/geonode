@@ -172,6 +172,13 @@ class Layer(ResourceBase):
         if self.storeType == 'dataStore':
             return "WFS"
 
+    @property
+    def ows_url(self):
+        if self.storeType == "remoteStore":
+            return self.service_set.all()[0].base_url
+        else:
+            return settings.OGC_SERVER['default']['LOCATION'] + "wms"
+ 
     def get_absolute_url(self):
         return reverse('layer_detail', args=(self.typename,))
 
@@ -452,7 +459,8 @@ def geoserver_post_save(instance, sender, **kwargs):
 
     # Set download links for WMS, WCS or WFS and KML
 
-    links = wms_links(ogc_server_settings.public_url + 'wms?',
+    #links = wms_links(ogc_server_settings.public_url + 'wms?',
+    links = wms_links(instance.ows_url + 'wms?',
                     instance.typename.encode('utf-8'), instance.bbox_string,
                     instance.srid, height, width)
 
@@ -468,7 +476,8 @@ def geoserver_post_save(instance, sender, **kwargs):
                         )
 
     if instance.storeType == "dataStore":
-        links = wfs_links(ogc_server_settings.public_url + 'wfs?', instance.typename.encode('utf-8'))
+        #links = wfs_links(ogc_server_settings.public_url + 'wfs?', instance.typename.encode('utf-8'))
+        links = wfs_links(instance.ows_url + 'wfs?', instance.typename.encode('utf-8'))
         for ext, name, mime, wfs_url in links:
             if mime=='SHAPE-ZIP':
                 name = 'Zipped Shapefile'
@@ -495,7 +504,8 @@ def geoserver_post_save(instance, sender, **kwargs):
         #Potentially 3 dimensions can be returned by the grid if there is a z
         #axis.  Since we only want width/height, slice to the second dimension
         covWidth, covHeight = get_coverage_grid_extent(instance)[:2]
-        links = wcs_links(ogc_server_settings.public_url + 'wcs?', instance.typename.encode('utf-8'),
+        #links = wcs_links(ogc_server_settings.public_url + 'wcs?', instance.typename.encode('utf-8'),
+        links = wcs_links(instance.ows_url + 'wcs?', instance.typename.encode('utf-8'),
                           bbox=gs_resource.native_bbox[:-1],
                           crs=gs_resource.native_bbox[-1],
                           height=str(covHeight), width=str(covWidth))
@@ -513,7 +523,8 @@ def geoserver_post_save(instance, sender, **kwargs):
         instance.set_gen_level(ANONYMOUS_USERS,permissions['anonymous'])
         instance.set_gen_level(AUTHENTICATED_USERS,permissions['authenticated'])
 
-    kml_reflector_link_download = ogc_server_settings.public_url + "wms/kml?" + urllib.urlencode({
+    #kml_reflector_link_download = ogc_server_settings.public_url + "wms/kml?" + urllib.urlencode({
+    kml_reflector_link_download = instance.ows_url + "wms/kml?" + urllib.urlencode({
         'layers': instance.typename.encode('utf-8'),
         'mode': "download"
     })
@@ -528,7 +539,8 @@ def geoserver_post_save(instance, sender, **kwargs):
                         )
                     )
 
-    kml_reflector_link_view = ogc_server_settings.public_url + "wms/kml?" + urllib.urlencode({
+    #kml_reflector_link_view = ogc_server_settings.public_url + "wms/kml?" + urllib.urlencode({
+    kml_reflector_link_view = instance.ows_url + "wms/kml?" + urllib.urlencode({
         'layers': instance.typename.encode('utf-8'),
         'mode': "refresh"
     })
@@ -543,7 +555,8 @@ def geoserver_post_save(instance, sender, **kwargs):
                         )
                     )
 
-    tile_url = ('%sgwc/service/gmaps?' % ogc_server_settings.public_url +
+    #tile_url = ('%sgwc/service/gmaps?' % ogc_server_settings.public_url +
+    tile_url = ('%sgwc/service/gmaps?' % instance.ows_url +
                 'layers=%s' % instance.typename.encode('utf-8') +
                 '&zoom={z}&x={x}&y={y}' +
                 '&format=image/png8'
@@ -572,11 +585,50 @@ def geoserver_post_save(instance, sender, **kwargs):
                             )
                         )
 
+    # new stuff here
+    ogc_wms_url = ogc_server_settings.public_url + 'wms?'
+    Link.objects.get_or_create(resource= instance.resourcebase_ptr,
+                        url=ogc_wms_url,
+                        defaults=dict(
+                            extension='html',
+                            name=instance.name,
+                            url=ogc_wms_url,
+                            mime='text/html',
+                            link_type='OGC:WMS',
+                        )
+                    )
+                        
+    if instance.storeType == "dataStore":
+        ogc_wfs_url = ogc_server_settings.public_url + 'wfs?'
+        Link.objects.get_or_create(resource= instance.resourcebase_ptr,
+                            url=ogc_wfs_url,
+                            defaults=dict(
+                                extension='html',
+                                name=instance.name,
+                                url=ogc_wfs_url,
+                                mime='text/html',
+                                link_type='OGC:WFS',
+                            )
+                        )
+
+    if instance.storeType == "coverageStore":
+        ogc_wcs_url = ogc_server_settings.public_url + 'wcs?'
+        Link.objects.get_or_create(resource= instance.resourcebase_ptr,
+                            url=ogc_wcs_url,
+                            defaults=dict(
+                                extension='html',
+                                name=instance.name,
+                                url=ogc_wcs_url,
+                                mime='text/html',
+                                link_type='OGC:WCS',
+                            )
+                        )
     #remove links that belong to and old address
 
     for link in instance.link_set.all():
         if not urlparse(settings.SITEURL).hostname == urlparse(link.url).hostname and not \
-                    urlparse(ogc_server_settings.public_url).hostname == urlparse(link.url).hostname:
+                    urlparse(instance.ows_url).hostname == urlparse(link.url).hostname:
+                    #urlparse(ogc_server_settings.public_url).hostname == urlparse(link.url).hostname:
             link.delete()
 
     #Save layer attributes
@@ -650,7 +702,8 @@ def get_coverage_grid_extent(instance):
         extent in pixels
     """
 
-    wcs = WebCoverageService(ogc_server_settings.public_url + 'wcs', '1.0.0')
+    #wcs = WebCoverageService(ogc_server_settings.public_url + 'wcs', '1.0.0')
+    wcs = WebCoverageService(instance.ows_url + 'wcs', '1.0.0')
     grid = wcs.contents[instance.workspace + ':' + instance.name].grid
     return [(int(h) - int(l) + 1) for
             h, l in zip(grid.highlimits, grid.lowlimits)]

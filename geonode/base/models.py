@@ -396,6 +396,30 @@ class ResourceBase(models.Model, PermissionLevelMixin, ThumbnailMixin):
                 description = '%s (%s Format)' % (self.title, url.name)
                 links.append((self.title, description, 'WWW:DOWNLOAD-1.0-http--download', url.url))
         return links
+        
+    def get_legend(self):
+        """Return Link for legend or None if it does not exist.
+        """
+        try:
+            legends_link = self.link_set.get(name='Legend')
+        except Link.DoesNotExist, e:
+            return None
+        else:
+            return legends_link
+
+
+    def get_legend_url(self):
+        """Return URL for legend or None if it does not exist.
+
+           The legend can be either an image (for Geoserver's WMS)
+           or a JSON object for ArcGIS.
+        """
+        legend = self.get_legend()
+
+        if legend is None:
+            return None
+
+        return legend.url
     
     def maintenance_frequency_title(self):
         return [v for i, v in enumerate(UPDATE_FREQUENCIES) if v[0] == self.maintenance_frequency][0][1].title()
