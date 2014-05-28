@@ -97,7 +97,8 @@ def _resolve_layer(request, typename, permission='layers.change_layer',
 def layer_list(request, template='layers/layer_list.html'):
     from geonode.search.views import search_page
     post = request.POST.copy()
-    post.update({'type': 'layer'})
+    if 'type' not in post:
+        post.update({'type': 'layer'})
     request.POST = post
     return search_page(request, template=template)
 
@@ -179,7 +180,6 @@ def layer_detail(request, layername, template='layers/layer_detail.html'):
 
     config = layer.attribute_config()
     # TODO we need to remove this dependency some way
-    #import ipdb;ipdb.set_trace()
     if layer.service_set.count() == 0:
         maplayer = GXPLayer(name = layer.typename, ows_url = layer.ows_url, layer_params=json.dumps( config))
     else:
