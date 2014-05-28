@@ -74,7 +74,7 @@ def search_page(request, template='search/search.html', **kw):
 
     total = 0
     for val in facets.values(): total+=val
-    total -= facets['raster'] + facets['vector']
+    total -= facets['raster'] + facets['vector'] + facets['remote']
     return render_to_response(template, RequestContext(request, {'object_list': results, 'total': total, 
         'facets': facets, 'query': json.dumps(query.get_query_response()), 'tags': tags,
         'initial_query': initial_query}))
@@ -96,6 +96,7 @@ def _get_search_context():
         'layers' : Layer.objects.count(),
         'vector' : Layer.objects.filter(storeType='dataStore').count(),
         'raster' : Layer.objects.filter(storeType='coverageStore').count(),
+        'remote' : Layer.objects.filter(storeType='remoteStore').count(),
         'documents': Document.objects.count(),
         'users' : Profile.objects.count()
     }

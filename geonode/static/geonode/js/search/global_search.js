@@ -84,10 +84,12 @@ $(function(){
             if($(element).hasClass('active')){
                 $('a[data-class="raster"]').addClass('active');
                 $('a[data-class="vector"]').addClass('active');
+                $('a[data-class="remote"]').addClass('active');
             }
             else{
                 $('a[data-class="raster"]').removeClass('active');
                 $('a[data-class="vector"]').removeClass('active');
+                $('a[data-class="remote"]').removeClass('active');
             }
         }
 
