@@ -272,6 +272,13 @@ def _get_layer_results(query):
 def _get_document_results(query):
 
     q = extension.document_query(query)
+    
+    # Filtering out wfpdocuments
+    # TODO remove this dependency in next GeoNode
+    if 'document' in query.type:
+        q = q.filter(wfpdocument=None)
+    else:
+        q = q.exclude(wfpdocument=None)
 
     q = _filter_security(q, query.user, Document, 'view_document')
 
@@ -345,6 +352,11 @@ def combined_search_results(query):
         results['layers'] = q
 
     if None in bytype or u'document' in bytype:
+        q = _get_document_results(query)
+        facets['document'] = q.count()
+        results['documents'] = q
+        
+    if None in bytype or u'wfpdocument' in bytype:
         q = _get_document_results(query)
         facets['document'] = q.count()
         results['documents'] = q
