@@ -97,7 +97,8 @@ def _get_search_context():
         'vector' : Layer.objects.filter(storeType='dataStore').count(),
         'raster' : Layer.objects.filter(storeType='coverageStore').count(),
         'remote' : Layer.objects.filter(storeType='remoteStore').count(),
-        'documents': Document.objects.count(),
+        'documents': Document.objects.filter(wfpdocument=None).count(),
+        'wfpdocuments': Document.objects.filter(wfpdocument!=None).count(),
         'users' : Profile.objects.count()
     }
     topics = Layer.objects.all().values_list('topic_category',flat=True)

@@ -31,7 +31,7 @@ class Document(ResourceBase):
     object_id = models.PositiveIntegerField(blank=True, null=True)
     resource = generic.GenericForeignKey('content_type', 'object_id')
 
-    doc_file = models.FileField(upload_to='documents')
+    doc_file = models.FileField(upload_to='documents', max_length=255)
     extension = models.CharField(max_length=128, blank=True, null=True)
 
     popular_count = models.IntegerField(default=0)
