@@ -335,10 +335,10 @@ def combined_search_results(query):
         q = _get_map_results(query)
         facets['map'] = q.count()
         results['maps'] = q
-
+    
     if None in bytype or u'layer' in bytype or u'raster' in bytype or u'vector' in bytype or u'remote' in bytype:
         q = _get_layer_results(query)
-        if not u'layer' in bytype:
+        if not u'layer' in bytype and None not in bytype:
             if not u'vector' in bytype:
                 q = q.exclude(storeType='dataStore')
             if not u'raster' in bytype:
@@ -366,5 +366,7 @@ def combined_search_results(query):
             q = _get_owner_results(query)
             facets['user'] = q.count()
             results['users'] = q
+    
+    print results
     
     return results
