@@ -59,6 +59,8 @@ from geonode.documents.models import get_related_documents
 from geonode.utils import ogc_server_settings
 from geoserver.resource import FeatureType
 
+from geonode.layers.cache import cache_per_user
+
 logger = logging.getLogger("geonode.layers.views")
 
 
@@ -644,13 +646,14 @@ def resolve_user(request):
     return HttpResponse(json.dumps(resp))
 
 
+@cache_per_user(60)
 def layer_acls(request):
     """
     returns json-encoded lists of layer identifiers that
     represent the sets of read-write and read-only layers
     for the currently authenticated user.
     """
-
+    
     # the layer_acls view supports basic auth, and a special
     # user which represents the geoserver administrator that
     # is not present in django.
