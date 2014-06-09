@@ -367,6 +367,4 @@ def combined_search_results(query):
             facets['user'] = q.count()
             results['users'] = q
     
-    print results
-    
     return results
