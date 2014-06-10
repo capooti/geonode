@@ -173,11 +173,15 @@ class Layer(ResourceBase):
             return "WFS"
 
     @property
+    def wms_url(self):
+        return settings.OGC_SERVER['default']['LOCATION'] + 'wms'
+            
+    @property
     def ows_url(self):
         if self.storeType == "remoteStore":
             return self.service_set.all()[0].base_url
         else:
-            return settings.OGC_SERVER['default']['LOCATION'] + "wms"
+            return settings.OGC_SERVER['default']['LOCATION']
  
     def get_absolute_url(self):
         return reverse('layer_detail', args=(self.typename,))
@@ -702,7 +706,6 @@ def get_coverage_grid_extent(instance):
         extent in pixels
     """
 
-    #wcs = WebCoverageService(ogc_server_settings.public_url + 'wcs', '1.0.0')
     wcs = WebCoverageService(instance.ows_url + 'wcs', '1.0.0')
     grid = wcs.contents[instance.workspace + ':' + instance.name].grid
     return [(int(h) - int(l) + 1) for
