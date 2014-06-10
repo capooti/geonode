@@ -179,11 +179,11 @@ def layer_detail(request, layername, template='layers/layer_detail.html'):
     layer = _resolve_layer(request, layername, 'layers.view_layer', _PERMISSION_MSG_VIEW)
 
     # maplayer = GXPLayer(name = layer.typename, ows_url = ogc_server_settings.public_url + "wms", layer_params=json.dumps( layer.attribute_config()))
-
+    
     config = layer.attribute_config()
     # TODO we need to remove this dependency some way
     if layer.service_set.count() == 0:
-        maplayer = GXPLayer(name = layer.typename, ows_url = layer.ows_url, layer_params=json.dumps( config))
+        maplayer = GXPLayer(name = layer.typename, ows_url = layer.wms_url, layer_params=json.dumps( config))
     else:
         service = layer.service_set.all()[0]
         source_params = {"ptype":service.ptype, "remote": True, "url": service.base_url, "name": service.name}
