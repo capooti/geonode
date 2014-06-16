@@ -71,6 +71,7 @@ def _get_user_objects(profile):
     qs_layers = []
     qs_maps = []
     qs_docs = []
+    qs_wfpdocs = []
 
     for obj in profile.user.resourcebase_set.all():
         if obj.geonode_type == 'layer':
@@ -78,15 +79,22 @@ def _get_user_objects(profile):
         if obj.geonode_type == 'map':
             qs_maps.append(obj.map)
         if obj.geonode_type == 'document':
-            qs_docs.append(obj.document)
+            if hasattr(obj.document, "wfpdocument"):
+                obj.document.wfpdocument.date = obj.document.date
+                obj.document.wfpdocument.title = obj.document.title
+                obj.document.wfpdocument.abstract = obj.document.abstract
+                obj.document.wfpdocument.thumbnail = obj.document.thumbnail
+                qs_wfpdocs.append(obj.document.wfpdocument)
+            else:
+                qs_docs.append(obj.document)
             
     # chain objects
-    return qs_layers, qs_maps, qs_docs
+    return qs_layers, qs_maps, qs_docs, qs_wfpdocs
 
 def profile_detail(request, username):
     profile = get_object_or_404(Profile, user__username=username)
     # combined queryset from each model content type
-    qs_layers, qs_maps, qs_docs = _get_user_objects(profile)
+    qs_layers, qs_maps, qs_docs, qs_wfpdocs = _get_user_objects(profile)
     object_list = []
     content_filter = 'all'
     sortby_field = 'date'
@@ -102,8 +110,11 @@ def profile_detail(request, username):
           if (content == 'documents'):
               content_filter = 'documents'
               object_list = qs_docs
-    if content_filter == 'all':       
-        object_list = list(chain(qs_layers,qs_maps,qs_docs))
+          if (content == 'wfpdocuments'):
+              content_filter = 'wfpdocuments'
+              object_list = qs_wfpdocs
+    if content_filter == 'all':
+        object_list = list(chain(qs_layers, qs_maps, qs_docs, qs_wfpdocs))
 
     sortby_field = 'date'
     if ('sortby' in request.GET):

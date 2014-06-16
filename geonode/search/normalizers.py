@@ -26,6 +26,8 @@ from django.template import defaultfilters
 from geonode.layers.models import Layer
 from geonode.maps.models import Map
 from geonode.documents.models import Document
+from wfp.wfpdocs.models import WFPDocument
+
 from geonode.search import extension
 
 from agon_ratings.categories import RATING_CATEGORY_LOOKUP
@@ -89,6 +91,7 @@ def apply_normalizers(results):
         ('maps', MapNormalizer),
         ('layers', LayerNormalizer),
         ('documents', DocumentNormalizer),
+        ('wfpdocuments', WFPDocumentNormalizer),
         ('users', OwnerNormalizer),
     ]
     for k,n in mapping:
@@ -225,6 +228,27 @@ class DocumentNormalizer(Normalizer):
             doc['bbox'] = _bbox(document)
         return doc
 
+class WFPDocumentNormalizer(Normalizer):
+    def last_modified(self):
+        return self.o.date
+    def populate(self, doc, exclude):
+        document = self.o
+        doc['id'] = document.id
+        doc['title'] = document.title
+        doc['abstract'] = defaultfilters.linebreaks(document.abstract)
+        doc['category'] = document.category.identifier if document.category else 'location'
+        doc['detail'] = reverse('wfpdocs-detail', args=(document.id,))
+        doc['owner'] = document.owner.username
+        doc['owner_detail'] = document.owner.get_absolute_url()
+        doc['last_modified'] = extension.date_fmt(document.date)
+        doc['_type'] = 'document'
+        doc['_display_type'] = extension.DOCUMENT_DISPLAY
+#        doc['thumb'] = map.get_thumbnail_url()
+        doc['keywords'] = document.keyword_list()
+        if 'bbox' not in exclude:
+            doc['bbox'] = _bbox(document)
+        return doc
+        
 class OwnerNormalizer(Normalizer):
     def title(self):
         return self.o.user.get_full_name() or self.o.user.username

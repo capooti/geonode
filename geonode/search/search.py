@@ -269,13 +269,13 @@ def _get_layer_results(query):
 
     return q.distinct()
 
-def _get_document_results(query):
+def _get_document_results(query, is_wfpdocument=False):
 
     q = extension.document_query(query)
     
     # Filtering out wfpdocuments
     # TODO remove this dependency in next GeoNode
-    if 'document' in query.type:
+    if 'document' in query.type or is_wfpdocument == False:
         q = q.filter(wfpdocument=None)
     else:
         q = q.exclude(wfpdocument=None)
@@ -325,7 +325,9 @@ def _get_document_results(query):
     return q.distinct()
 
 def combined_search_results(query):
-    facets = dict([ (k,0) for k in ('map', 'layer', 'vector', 'raster', 'remote', 'document', 'user')])
+
+    facets = dict([ (k,0) for k in ('map', 'layer', 'vector', 'raster', 
+        'remote', 'document', 'wfpdocument', 'user')])
     results = {'facets' : facets}
 
     bytype = (None,) if u'all' in query.type else query.type
@@ -357,14 +359,14 @@ def combined_search_results(query):
         results['documents'] = q
         
     if None in bytype or u'wfpdocument' in bytype:
-        q = _get_document_results(query)
-        facets['document'] = q.count()
-        results['documents'] = q
+        q = _get_document_results(query, is_wfpdocument=True)
+        facets['wfpdocument'] = q.count()
+        results['wfpdocuments'] = q
 
     if query.categories and len(query.categories) == TopicCategory.objects.count() or not query.categories:
         if None in bytype or u'user' in bytype:
             q = _get_owner_results(query)
             facets['user'] = q.count()
             results['users'] = q
-    
+            
     return results
