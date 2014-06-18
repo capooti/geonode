@@ -140,6 +140,12 @@ def _build_map_layer_text_query(q, query, query_keywords=False):
 
 def _build_kw_only_query(keywords):
     return reduce(operator.or_, [Q(keywords__slug__contains=kw) for kw in keywords])
+    
+def _build_wfpcategories_only_query(wfpcategories):
+    return reduce(operator.or_, [Q(wfpdocument__categories__name__contains=category) for category in wfpcategories])
+    
+def _build_regions_only_query(regions):
+    return reduce(operator.or_, [Q(regions__name__contains=region) for region in regions])
 
 def _get_owner_results(query):
     # make sure all contacts have a user attached
@@ -306,6 +312,12 @@ def _get_document_results(query, is_wfpdocument=False):
 
     if query.categories:
         q = _filter_category(q, query.categories)
+        
+    if query.wfpcategories:
+        q = q.filter(_build_wfpcategories_only_query(query.wfpcategories))
+    
+    if query.regions:
+        q = q.filter(_build_regions_only_query(query.regions))
 
     # this is a special optimization for pre-fetching results when requesting
     # all records via search

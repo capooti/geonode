@@ -43,7 +43,9 @@ _SEARCH_PARAMS = [
     'start',
     'exclude',
     'cache',
-    'category']
+    'category',
+    'wfpcategory',
+    'region',]
 
 # settings API
 _search_config = getattr(settings,'SIMPLE_SEARCH_SETTINGS', {})
@@ -105,8 +107,14 @@ class Query(object):
         self.kw = filters.get('kw')
         self.exclude = filters.get('exclude')
         self.categories = tuple(filters.get('category').split(',')) if filters.get('category') else None
+        self.wfpcategories = filters.get('wfpcategory')
+        self.regions = filters.get('region')
         if self.kw:
             self.kw = tuple(self.kw.split(','))
+        if self.wfpcategories:
+            self.wfpcategories = tuple(self.wfpcategories.split(','))
+        if self.regions:
+            self.regions = tuple(self.regions.split(','))
         if self.exclude:
             self.exclude = tuple(self.exclude.split(','))
 
