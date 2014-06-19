@@ -78,11 +78,12 @@ def search_page(request, template='search/search.html', **kw):
     # get the regions and their count
     regions = {}
     for item in results:
-        for region_item in item.o.regions.all():
-            regions[region_item.name] = regions.get(region_item.name,{})
-            regions[region_item.name]['slug'] = region_item.name
-            regions[region_item.name]['name'] = region_item.name
-            regions[region_item.name]['count'] = regions[region_item.name].get('count',0) + 1
+        if hasattr(item.o, 'regions'):
+            for region_item in item.o.regions.all():
+                regions[region_item.name] = regions.get(region_item.name,{})
+                regions[region_item.name]['slug'] = region_item.name
+                regions[region_item.name]['name'] = region_item.name
+                regions[region_item.name]['count'] = regions[region_item.name].get('count',0) + 1
     regions = collections.OrderedDict(sorted(regions.items()))
     
     # get the keywords and their count
