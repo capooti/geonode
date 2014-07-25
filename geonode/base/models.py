@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.conf import settings
 from django.contrib.staticfiles.templatetags import staticfiles
+from django.core.cache import cache
 
 from geonode.base.enumerations import ALL_LANGUAGES, \
     HIERARCHY_LEVELS, UPDATE_FREQUENCIES, \
@@ -522,6 +523,11 @@ def resourcebase_post_save(instance, sender, **kwargs):
                                            defaults={"name": user.username}
                                            )
         resourcebase.metadata_author = ac
+    # update cache
+    cache_version = cache.get('cache_version')
+    if not cache_version:
+        cache_version = 1
+    cache.set('cache_version', cache_version + 1)
 
 def resourcebase_post_delete(instance, sender, **kwargs):
     """
