@@ -65,38 +65,46 @@ def search_page(request, template='search/search.html', **kw):
     results, facets, query = search_api(request, format='html', **kw)
     
     # get the wfp categories and their count (just for wfpdocuments!)
-    categories = {}
-    for item in results:
-        if hasattr(item.o, 'wfpdocument'):
-            for category_item in item.o.wfpdocument.categories.all():
-                categories[category_item.name] = categories.get(category_item.name,{})
-                categories[category_item.name]['slug'] = category_item.name
-                categories[category_item.name]['name'] = category_item.name
-                categories[category_item.name]['count'] = categories[category_item.name].get('count',0) + 1
-    categories = collections.OrderedDict(sorted(categories.items()))
-    
+    categories = cache.get('categories')
+    if not categories:
+        categories = {}
+        for item in results:
+            if hasattr(item.o, 'wfpdocument'):
+                for category_item in item.o.wfpdocument.categories.all():
+                    categories[category_item.name] = categories.get(category_item.name,{})
+                    categories[category_item.name]['slug'] = category_item.name
+                    categories[category_item.name]['name'] = category_item.name
+                    categories[category_item.name]['count'] = categories[category_item.name].get('count',0) + 1
+        categories = collections.OrderedDict(sorted(categories.items()))
+        cache.set('categories', categories)
+        
     # get the regions and their count
-    regions = {}
-    for item in results:
-        if hasattr(item.o, 'regions'):
-            for region_item in item.o.regions.all():
-                regions[region_item.name] = regions.get(region_item.name,{})
-                regions[region_item.name]['slug'] = region_item.name
-                regions[region_item.name]['name'] = region_item.name
-                regions[region_item.name]['count'] = regions[region_item.name].get('count',0) + 1
-    regions = collections.OrderedDict(sorted(regions.items()))
+    regions = cache.get('regions')
+    if not regions:
+        regions = {}
+        for item in results:
+            if hasattr(item.o, 'regions'):
+                for region_item in item.o.regions.all():
+                    regions[region_item.name] = regions.get(region_item.name,{})
+                    regions[region_item.name]['slug'] = region_item.name
+                    regions[region_item.name]['name'] = region_item.name
+                    regions[region_item.name]['count'] = regions[region_item.name].get('count',0) + 1
+        regions = collections.OrderedDict(sorted(regions.items()))
+        cache.set('regions', regions)
     
     # get the keywords and their count
-    tags = {}
-    for item in results:
-        for tagged_item in item.o.tagged_items.all():
-            tags[tagged_item.tag.slug] = tags.get(tagged_item.tag.slug,{})
-            tags[tagged_item.tag.slug]['slug'] = tagged_item.tag.slug
-            tags[tagged_item.tag.slug]['name'] = tagged_item.tag.name
-            tags[tagged_item.tag.slug]['count'] = tags[tagged_item.tag.slug].get('count',0) + 1
+    tags = cache.get('tags')
+    if not tags:
+        tags = {}
+        for item in results:
+            for tagged_item in item.o.tagged_items.all():
+                tags[tagged_item.tag.slug] = tags.get(tagged_item.tag.slug,{})
+                tags[tagged_item.tag.slug]['slug'] = tagged_item.tag.slug
+                tags[tagged_item.tag.slug]['name'] = tagged_item.tag.name
+                tags[tagged_item.tag.slug]['count'] = tags[tagged_item.tag.slug].get('count',0) + 1
+        cache.set('tags', tags)
             
     total = 0
-    
     for val in facets.values(): total+=val
     total -= facets['raster'] + facets['vector'] + facets['remote']
     
