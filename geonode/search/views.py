@@ -66,8 +66,7 @@ def search_page(request, template='search/search.html', **kw):
     
     cache_version = cache.get('cache_version')
     if not cache_version:
-        cache_version = 1
-        cache.set('cache_version')
+        cache.set('cache_version', 1)
             
     # get the wfp categories and their count (just for wfpdocuments!)
     categories = cache.get('categories', version=cache_version)
