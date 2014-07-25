@@ -526,7 +526,7 @@ def resourcebase_post_save(instance, sender, **kwargs):
     # update cache
     cache_version = cache.get('cache_version')
     if not cache_version:
-        cache_version = 1
+        cache_version = 0
     cache.set('cache_version', cache_version + 1)
 
 def resourcebase_post_delete(instance, sender, **kwargs):
