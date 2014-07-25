@@ -64,8 +64,13 @@ def search_page(request, template='search/search.html', **kw):
     initial_query = request.REQUEST.get('q','')
     results, facets, query = search_api(request, format='html', **kw)
     
+    cache_version = cache.get('cache_version')
+    if not cache_version:
+        cache_version = 1
+        cache.set('cache_version')
+            
     # get the wfp categories and their count (just for wfpdocuments!)
-    categories = cache.get('categories')
+    categories = cache.get('categories', version=cache_version)
     if not categories:
         categories = {}
         for item in results:
@@ -76,10 +81,10 @@ def search_page(request, template='search/search.html', **kw):
                     categories[category_item.name]['name'] = category_item.name
                     categories[category_item.name]['count'] = categories[category_item.name].get('count',0) + 1
         categories = collections.OrderedDict(sorted(categories.items()))
-        cache.set('categories', categories)
+        cache.set('categories', categories, version=cache_version)
         
     # get the regions and their count
-    regions = cache.get('regions')
+    regions = cache.get('regions', version=cache_version)
     if not regions:
         regions = {}
         for item in results:
@@ -90,10 +95,10 @@ def search_page(request, template='search/search.html', **kw):
                     regions[region_item.name]['name'] = region_item.name
                     regions[region_item.name]['count'] = regions[region_item.name].get('count',0) + 1
         regions = collections.OrderedDict(sorted(regions.items()))
-        cache.set('regions', regions)
+        cache.set('regions', regions, version=cache_version)
     
     # get the keywords and their count
-    tags = cache.get('tags')
+    tags = cache.get('tags', version=cache_version)
     if not tags:
         tags = {}
         for item in results:
@@ -102,7 +107,7 @@ def search_page(request, template='search/search.html', **kw):
                 tags[tagged_item.tag.slug]['slug'] = tagged_item.tag.slug
                 tags[tagged_item.tag.slug]['name'] = tagged_item.tag.name
                 tags[tagged_item.tag.slug]['count'] = tags[tagged_item.tag.slug].get('count',0) + 1
-        cache.set('tags', tags)
+        cache.set('tags', tags, version=cache_version)
             
     total = 0
     for val in facets.values(): total+=val
