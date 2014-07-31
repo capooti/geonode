@@ -247,7 +247,22 @@
             var more = (page * 10) < data.total;
             return {
               results: $.map(data.results,function(object){
-                return {id: object.id, text: object.title, url: object.detail };
+                var objicon = "<i class='icon-barcode'></i>"
+                switch(object._type) {
+                    case 'map':
+                        objicon = "<i class='icon-map-marker'></i>";
+                        break;
+                    case 'layer':
+                        objicon = "<i class='icon-unchecked icon-rotate-45'></i>";
+                        break;
+                    case 'document':
+                        objicon = "<i class='icon-file-text-alt'></i>";
+                        break;
+                    case 'owner':
+                        objicon = "<i class='icon-user'></i>";
+                        break;
+                }
+                return {id: object.id, text: (objicon + ' ' + object.title), url: object.detail };
               }),
               more: more
             }
