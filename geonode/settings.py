@@ -191,7 +191,7 @@ INSTALLED_APPS = (
     'agon_ratings',
     'notification',
     'announcements',
-    #'actstream',
+    'actstream',
     'user_messages',
 
     # GeoNode internal apps
