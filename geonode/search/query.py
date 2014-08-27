@@ -149,9 +149,15 @@ class Query(object):
 
 
     def cache_key(self):
-        '''the cache key is based on filters, the user and the text query'''
+        '''the cache key is based on filters, the user, the version, and the text query'''
+        from django.core.cache import cache
+        cache_version = cache.get('cache_version')
+        if not cache_version:
+            cache.set('cache_version', 1)
         fhash = reduce(operator.xor, map(hash, self.params.items()))
-        return str(fhash ^ hash(self.user.username if self.user else 31) ^ hash(self.query))
+        key = str(fhash ^ hash(self.user.username if self.user else 31) 
+            ^ hash(cache_version) ^ hash(self.query))
+        return key
 
 
     def get_query_response(self):

@@ -64,14 +64,16 @@ def search_page(request, template='search/search.html', **kw):
     initial_query = request.REQUEST.get('q','')
     results, facets, query = search_api(request, format='html', **kw)
     
-    cache_user_prefix = 'logged'
-    if request.user.is_anonymous():
-        cache_user_prefix = 'unlogged'
+    # cache is per user and per version
+    # every time an object is added and removed (TODO) cache version is increased
+    cache_user_prefix = 'unlogged'
+    if not request.user.is_anonymous():
+        cache_user_prefix = request.user.username
         
     cache_version = cache.get('cache_version')
     if not cache_version:
         cache.set('cache_version', 1)
-            
+    
     # get the wfp categories and their count (just for wfpdocuments!)
     categories = cache.get('%s_categories' % cache_user_prefix, version=cache_version)
     if not categories:
