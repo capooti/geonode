@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.contrib.contenttypes import generic
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 
 from geonode.security.enumerations import AUTHENTICATED_USERS, ANONYMOUS_USERS
 from geonode.layers.models import Layer
@@ -21,6 +22,17 @@ IMGTYPES = ['jpg', 'jpeg', 'tif', 'tiff', 'png', 'gif']
 
 logger = logging.getLogger(__name__)
 
+class OverwriteStorage(FileSystemStorage):
+    '''
+    Change the Django behaviour replacing a file for a FileField instead than
+    creating a new file.
+    Code from: https://gist.github.com/fabiomontefuscolo/1584462
+    '''
+    def get_available_name(self, name):
+        if self.exists(name):
+            os.remove(os.path.join(settings.MEDIA_ROOT, name))
+        return name
+
 class Document(ResourceBase):
     """
     A document is any kind of information that can be attached to a map such as pdf, images, videos, xls...
@@ -31,7 +43,9 @@ class Document(ResourceBase):
     object_id = models.PositiveIntegerField(blank=True, null=True)
     resource = generic.GenericForeignKey('content_type', 'object_id')
 
-    doc_file = models.FileField(upload_to='documents', max_length=255)
+    #doc_file = models.FileField(upload_to='documents', max_length=255)
+    doc_file = models.FileField(upload_to='documents', max_length=255, 
+        storage=OverwriteStorage())
     extension = models.CharField(max_length=128, blank=True, null=True)
 
     popular_count = models.IntegerField(default=0)
