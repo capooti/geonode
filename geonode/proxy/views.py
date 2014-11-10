@@ -27,6 +27,7 @@ from django.http.request import validate_host
 
 
 def proxy(request):
+
     PROXY_ALLOWED_HOSTS = getattr(settings, 'PROXY_ALLOWED_HOSTS', ())
 
     host = None

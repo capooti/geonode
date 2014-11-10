@@ -122,13 +122,20 @@ if "geonode.contrib.dynamic" in settings.INSTALLED_APPS:
 if 'geonode.geoserver' in settings.INSTALLED_APPS:
     # GeoServer Helper Views
     urlpatterns += patterns('',
-                            # Upload views
-                            (r'^upload/', include('geonode.upload.urls')),
-                            (r'^gs/', include('geonode.geoserver.urls')),
-                            )
+        # Upload views
+        (r'^upload/', include('geonode.upload.urls')),
+        (r'^gs/', include('geonode.geoserver.urls')),
+    )
 
-# Set up proxy
-urlpatterns += geonode.proxy.urls.urlpatterns
+# geoserver proxy
+if settings.PROXY_GEOSERVER:
+    urlpatterns += patterns('',
+        url(r'^geoserver/', 'geonode.geoserver.views.geoserver_proxy', name='geoserver_proxy'),
+        url(r'^proxy/', 'geonode.geoserver.views.geoserver_proxy', name='geoserver_proxy'),
+    )
+else:
+    # Set up regular proxy
+    urlpatterns += geonode.proxy.urls.urlpatterns
 
 # Serve static files
 urlpatterns += staticfiles_urlpatterns()

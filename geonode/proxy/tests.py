@@ -24,14 +24,17 @@ unittest). These will both pass when you run "manage.py test".
 
 Replace these with more appropriate tests for your application.
 """
+
+import unittest
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.test.utils import override_settings
-
+from django.conf import settings
 
 TEST_DOMAIN = '.github.com'
 TEST_URL = 'https://help%s/' % TEST_DOMAIN
-
+PROXY_GEOSERVER = settings.PROXY_GEOSERVER
 
 class ProxyTest(TestCase):
 
@@ -43,6 +46,7 @@ class ProxyTest(TestCase):
         # FIXME(Ariel): These tests do not work when the computer is offline.
         self.url = TEST_URL
 
+    @unittest.skipIf(PROXY_GEOSERVER==True, 'Not tested if GeoServer is proxyed')
     @override_settings(DEBUG=True, PROXY_ALLOWED_HOSTS=())
     def test_validate_host_disabled_in_debug(self):
         """If PROXY_ALLOWED_HOSTS is empty and DEBUG is True, all hosts pass the proxy."""
@@ -50,6 +54,7 @@ class ProxyTest(TestCase):
         response = c.get('/proxy?url=%s' % self.url, follow=True)
         self.assertEqual(response.status_code, 200)
 
+    @unittest.skipIf(PROXY_GEOSERVER==True, 'Not tested if GeoServer is proxyed')
     @override_settings(DEBUG=False, PROXY_ALLOWED_HOSTS=())
     def test_validate_host_disabled_not_in_debug(self):
         """If PROXY_ALLOWED_HOSTS is empty and DEBUG is False requests should return 403."""
@@ -57,6 +62,7 @@ class ProxyTest(TestCase):
         response = c.get('/proxy?url=%s' % self.url, follow=True)
         self.assertEqual(response.status_code, 403)
 
+    @unittest.skipIf(PROXY_GEOSERVER==True, 'Not tested if GeoServer is proxyed')
     @override_settings(DEBUG=False, PROXY_ALLOWED_HOSTS=('.google.com',))
     @override_settings(DEBUG=False, PROXY_ALLOWED_HOSTS=(TEST_DOMAIN,))
     def test_proxy_allowed_host(self):

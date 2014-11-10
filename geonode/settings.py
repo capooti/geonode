@@ -445,14 +445,22 @@ CACHE_TIME = 0
 
 # OGC (WMS/WFS/WCS) Server Settings
 # OGC (WMS/WFS/WCS) Server Settings
+
+# setting to proxy GeoServer
+PROXY_GEOSERVER = True
+PROXY_GEOSERVER_PORT = 8080
+GEOSERVER_LOCATION = 'http://localhost:8080/geoserver/'
+if PROXY_GEOSERVER:
+    GEOSERVER_LOCATION = 'http://localhost:8000/geoserver/'
+
 OGC_SERVER = {
     'default': {
         'BACKEND': 'geonode.geoserver',
-        'LOCATION': 'http://localhost:8080/geoserver/',
+        'LOCATION': GEOSERVER_LOCATION,
         # PUBLIC_LOCATION needs to be kept like this because in dev mode
         # the proxy won't work and the integration tests will fail
         # the entire block has to be overridden in the local_settings
-        'PUBLIC_LOCATION': 'http://localhost:8080/geoserver/',
+        'PUBLIC_LOCATION': GEOSERVER_LOCATION,
         'USER': 'admin',
         'PASSWORD': 'geoserver',
         'MAPFISH_PRINT_ENABLED': True,

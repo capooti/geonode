@@ -2,6 +2,8 @@ import json
 import logging
 import httplib2
 import os
+import xml.dom.minidom
+from urlparse import urlparse
 
 from django.contrib.auth import authenticate
 from django.utils import simplejson
@@ -16,12 +18,14 @@ from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.translation import ugettext as _
+from django.views.decorators.csrf import csrf_exempt
+from django.http import QueryDict
 
 from guardian.shortcuts import get_objects_for_user
 
 from geonode.layers.forms import LayerStyleUploadForm
 from geonode.layers.models import Layer, Style
-from geonode.layers.views import _resolve_layer, _PERMISSION_MSG_MODIFY
+from geonode.layers.views import _resolve_layer, _PERMISSION_MSG_MODIFY, _PERMISSION_MSG_DOWNLOAD
 from geonode.geoserver.signals import gs_catalog
 from geonode.utils import json_response, _get_basic_auth_info
 from geoserver.catalog import FailedRequestError, ConflictingDataError
@@ -447,7 +451,13 @@ def layer_acls(request):
     # the layer_acls view supports basic auth, and a special
     # user which represents the geoserver administrator that
     # is not present in django.
+    
+    # TODO hack to make proxy working with geoserver authentication, for now
+    # we leave it open (if using vanilla, we don't need this!)
     acl_user = request.user
+    if acl_user.is_anonymous():
+        acl_user = authenticate(username='admin', password='admin')
+    
     if 'HTTP_AUTHORIZATION' in request.META:
         try:
             username, password = _get_basic_auth_info(request)
@@ -502,3 +512,116 @@ def layer_acls(request):
         result['email'] = acl_user.email
 
     return HttpResponse(json.dumps(result), mimetype="application/json")
+    
+    
+@csrf_exempt
+def geoserver_proxy(request):
+
+    GEOSERVER_URL = 'http://localhost:%s' % settings.PROXY_GEOSERVER_PORT
+    
+    # first parse request and check if it was proxyed
+    querystring = ''
+    if request.path == '/proxy/':
+        url = urlparse(request.GET['url']).geturl()
+        req_dict = QueryDict(url)
+        req_dict.urlencode()
+    else:
+        req_dict = request.GET
+        querystring = request.GET.urlencode()
+        url = '%s%s?%s' % (GEOSERVER_URL, request.path, querystring)
+    
+    print 'Request is %s: %s' % (request.method, request.path)
+    
+    ogc_service = ''
+    ogc_request = ''
+    req_dict = dict((k.lower(), v) for k, v in req_dict.iteritems())
+    if 'service' in req_dict:
+        ogc_service = req_dict['service']
+        print 'SERVICE: %s' % ogc_service
+    if 'request' in req_dict:
+        ogc_request = req_dict['request']
+        print 'REQUEST: %s' % ogc_request
+    
+    # process permissions related only to GeoServer here
+    # 1. view_resourcebase
+    # 2. download_resourcebase
+    # 3. change_layer_data
+    # 4. change_layer_style this is managed in the REST proxy view
+    
+    # TODO provide better permissions messages (now using only
+    # _PERMISSION_MSG_MODIFY, _PERMISSION_MSG_DOWNLOAD)
+    
+    # 1. view_resourcebase
+    if request.method == 'GET':
+        if '/geoserver/gwc/service/gmaps' in request.path:
+            layername = req_dict['layers'] # TODO handle the multiple layers case
+            layer = _resolve_layer(
+                request,
+                layername,
+                'base.view_resourcebase',
+                _PERMISSION_MSG_MODIFY)
+    # 1a. we could add a permission for identify with GetFeatureInfo
+    if ogc_service == 'WMS':
+        if ogc_request == 'GetFeatureInfo':
+            print 'we could add a permission for the GetFeatureInfo request'
+    # 2. download_resourcebase
+    if ogc_service == 'WFS':
+        if ogc_request == 'GetFeature':
+            if 'outputformat' in req_dict:
+                print 'here we need to check download permissions'
+                layername = req_dict['typename']
+                layer = _resolve_layer(
+                    request,
+                    layername,
+                    'base.download_resourcebase',
+                    _PERMISSION_MSG_DOWNLOAD)
+    # 3. change_layer_data
+    if request.method == 'POST':
+        if 'wfs:Transaction' in request.body:
+            body_dom = xml.dom.minidom.parseString('<?xml version="1.0" encoding="UTF-8"?>%s' % request.body)
+            layername = body_dom.getElementsByTagName('wfs:Update')[0].getAttribute('typeName').split(':')[-1]
+            # TODO find a way to get the workspace, for now we hard-code
+            layername = 'geonode:%s' % layername
+            layer = _resolve_layer(
+                    request,
+                    layername, 
+                    'layers.change_layer_data',
+                    _PERMISSION_MSG_MODIFY)
+            print 'we could add a permission for editing data'
+    
+    # if we are still here, we can proxy the request as permissions are OK
+    # looks we need to do the following encode action because of this bug:
+    # http://bugs.python.org/issue11898
+    url = url.encode('utf-8','ignore')
+    headers = dict()
+    zipfile = ''
+    if request.method in ('POST', 'PUT'):
+        headers = {'Content-type': request.META['CONTENT_TYPE']}
+        zipfile = request.read()
+        
+    http = httplib2.Http('.cache', disable_ssl_certificate_validation=True)
+    http.add_credentials(*(ogc_server_settings.credentials))
+    #http.add_credentials('admin', 'admin')
+    
+    print '*** Proxying request to: %s' % url
+    if zipfile == '':
+        response, content = http.request(
+            url, request.method,
+            #body=request.read(),
+            headers=headers
+        )
+    else:
+        response, content = http.request(
+            url, request.method,
+            body=zipfile,
+            headers=headers
+        )
+        
+    content_type = None
+    if 'content-type' in response:
+        content_type = response['content-type']
+        
+    return HttpResponse(
+        content=content,
+        status=response.status,
+        mimetype=response.get("content-type", content_type))
