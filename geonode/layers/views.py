@@ -34,6 +34,7 @@ from django.utils.html import escape
 from django.template.defaultfilters import slugify
 from django.forms.models import inlineformset_factory
 from django.db.models import F
+from django.core.exceptions import PermissionDenied
 
 from geonode.services.models import Service
 from geonode.layers.forms import LayerForm, LayerUploadForm, NewLayerUploadForm, LayerAttributeForm
@@ -65,6 +66,7 @@ _PERMISSION_MSG_MODIFY = _("You are not permitted to modify this layer")
 _PERMISSION_MSG_METADATA = _(
     "You are not permitted to modify this layer's metadata")
 _PERMISSION_MSG_VIEW = _("You are not permitted to view this layer")
+_PERMISSION_MSG_MODIFY = _("You are not permitted to modify this layer")
 
 
 def _resolve_layer(request, typename, permission='base.view_resourcebase',
@@ -98,6 +100,10 @@ def _resolve_layer(request, typename, permission='base.view_resourcebase',
 
 @login_required
 def layer_upload(request, template='upload/layer_upload.html'):
+
+    if not request.user.can_upload_resources and not any(gm.group.can_upload_resources for gm in request.user.groupmember_set.all()):
+        raise PermissionDenied()
+        
     if request.method == 'GET':
         ctx = {
             'charsets': CHARSETS,
@@ -251,6 +257,7 @@ def layer_detail(request, layername, template='layers/layer_detail.html'):
 
 @login_required
 def layer_metadata(request, layername, template='layers/layer_metadata.html'):
+
     layer = _resolve_layer(
         request,
         layername,

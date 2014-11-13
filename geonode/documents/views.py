@@ -109,6 +109,12 @@ def document_download(request, docid):
 class DocumentUploadView(CreateView):
     template_name = 'documents/document_upload.html'
     form_class = DocumentCreateForm
+    
+    def get_form_class(self):
+        if self.request.user.can_upload_resources or any(gm.group.can_upload_resources for gm in self.request.user.groupmember_set.all()):
+            return DocumentCreateForm
+        else:
+            raise PermissionDenied()
 
     def form_valid(self, form):
         """

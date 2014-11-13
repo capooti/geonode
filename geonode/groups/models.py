@@ -47,6 +47,15 @@ class GroupProfile(models.Model):
         choices=GROUP_CHOICES,
         help_text=access_help_text)
     last_modified = models.DateTimeField(auto_now=True)
+    # global permissions
+    can_upload_resources = models.BooleanField(
+        _('Can upload data?'),
+        help_text=_('specifies if the group can upload layers and documents'),
+        default=True)
+    can_change_resourcebase_metadata = models.BooleanField(
+        _('Can change metadata?'),
+        help_text=_('specifies if the group can edit metadata'),
+        default=True)
 
     def save(self, *args, **kwargs):
         group, created = Group.objects.get_or_create(name=self.slug)

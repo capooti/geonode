@@ -88,6 +88,15 @@ class Profile(AbstractUser):
     keywords = TaggableManager(_('keywords'), blank=True, help_text=_(
         'commonly used word(s) or formalised word(s) or phrase(s) used to describe the subject \
             (space or comma-separated'))
+    # global permissions
+    can_upload_resources = models.BooleanField(
+        _('Can upload data?'),
+        help_text=_('specifies if the user can upload layers and documents'),
+        default=True)
+    can_change_resourcebase_metadata = models.BooleanField(
+        _('Can change metadata?'),
+        help_text=_('specifies if the user can edit metadata'),
+        default=True)
 
     def get_absolute_url(self):
         return reverse('profile_detail', args=[self.username, ])

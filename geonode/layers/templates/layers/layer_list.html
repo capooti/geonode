@@ -10,7 +10,9 @@
 
 {% block body %}
   <div class="col-md-12">
-    <a href="{% url "layer_upload" %}" class="btn btn-primary pull-right">{% trans "Upload Layers" %}</a>
+    {% if request.user.can_upload_resources %}
+      <a href="{% url "layer_upload" %}" class="btn btn-primary pull-right">{% trans "Upload Layers" %}</a>
+    {% endif %}
     <h2 class="page-title">{% trans "Explore Layers" %}</h2>
   </div>
   {% with include_type_filter='true' %}

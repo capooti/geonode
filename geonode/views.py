@@ -79,11 +79,20 @@ def ajax_lookup(request):
             content='use a field named "query" to specify a prefix to filter usernames',
             mimetype='text/plain')
     keyword = request.POST['query']
+    permission = ''
     users = get_user_model().objects.filter(Q(username__startswith=keyword) |
                                             Q(first_name__contains=keyword) |
                                             Q(organization__contains=keyword))
     groups = GroupProfile.objects.filter(Q(title__startswith=keyword) |
                                          Q(description__contains=keyword))
+    # check if we need to filter out users without required permission
+    print request.POST
+    if 'permission' in request.POST:
+        permission = request.POST['permission'].split('.')[-1]
+        if permission =='change_resourcebase_metadata':
+            users = users.filter(can_change_resourcebase_metadata=True)
+            groups = groups.filter(can_change_resourcebase_metadata=True)
+            
     json_dict = {
         'users': [({'username': u.username}) for u in users],
         'count': users.count(),

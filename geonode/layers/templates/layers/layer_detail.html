@@ -192,7 +192,7 @@
           </div>
           <div class="modal-body">
             <ul>
-              {% if "change_resourcebase_metadata" in perms %}
+              {% if "change_resourcebase_metadata" in perms or request.user.can_change_resourcebase_metadata %}
               <li><a href="{% url "layer_metadata" resource.service_typename %}">{% trans "Edit Metadata" %}</a></li>  
               {% endif %}             
               {% if GEOSERVER_BASE_URL %}

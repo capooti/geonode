@@ -176,68 +176,76 @@
     });
     
     function addSelectUsers(){
-      $("input.user-select").select2({
-        placeholder: '{% trans "Choose users..." %}',
-        minimumInputLength: 1,
-        multiple: true,
-        width: 'copy',
-        ajax: {
-          url: "{% url "account_ajax_lookup" %}",
-          dataType: "json",
-          type: "POST",
-          data: function (term, page) {
-            return {
-              query: term,
-            };
+      $("input.user-select").each(function() {
+        var permission = $(this).attr('name');
+        $(this).select2({
+          placeholder: '{% trans "Choose users..." %}',
+          minimumInputLength: 1,
+          multiple: true,
+          width: 'copy',
+          ajax: {
+            url: "{% url "account_ajax_lookup" %}",
+            dataType: "json",
+            type: "POST",
+            data: function (term, page) {
+              return {
+                query: term,
+                permission: permission
+              };
+            },
+            results: function (data, page) {
+              return {results: data.users};
+            }
           },
-          results: function (data, page) {
-            return {results: data.users};
+          id: userID,
+          formatResult: userFormatResult,
+          formatSelection: userFormatSelection,
+          initSelection: function(element, callback) {
+            var data = [];
+            var val = element.val().split(",");
+            $(element.val().split(",")).each(function (index,value) {
+                data.push({username: value});
+            })
+            callback(data);
           }
-        },
-        id: userID,
-        formatResult: userFormatResult,
-        formatSelection: userFormatSelection,
-        initSelection: function(element, callback) {
-          var data = [];
-          var val = element.val().split(",");
-          $(element.val().split(",")).each(function (index,value) {
-              data.push({username: value});
-          });
-          callback(data);
-        }
+        });
       });
     }
-
+    
     function addSelectGroups(){
-      $("input.group-select").select2({
-        placeholder: '{% trans "Choose groups..." %}',
-        minimumInputLength: 1,
-        multiple: true,
-        width: 'copy',
-        ajax: {
-          url: "{% url "account_ajax_lookup" %}",
-          dataType: "json",
-          type: "POST",
-          data: function (term, page) {
-            return {
-              query: term,
-            };
+      $("input.group-select").each(function() {
+        var permission = $(this).attr('name');
+        $(this).select2({
+          placeholder: '{% trans "Choose groups..." %}',
+          minimumInputLength: 1,
+          multiple: true,
+          width: 'copy',
+          ajax: {
+            url: "{% url "account_ajax_lookup" %}",
+            dataType: "json",
+            type: "POST",
+            data: function (term, page) {
+              return {
+                query: term,
+                permission: permission
+              };
+            },
+            results: function (data, page) {
+              return {results: data.groups};
+            }
           },
-          results: function (data, page) {
-            return {results: data.groups};
+          id: groupID,
+          formatResult: groupFormatResult,
+          formatSelection: groupFormatSelection,
+          initSelection: function(element, callback) {
+            var data = [];
+            var val = element.val().split(",");
+            $(element.val().split(",")).each(function (index,value) {
+                data.push({name: value});
+            });
+            callback(data);
           }
-        },
-        id: groupID,
-        formatResult: groupFormatResult,
-        formatSelection: groupFormatSelection,
-        initSelection: function(element, callback) {
-          var data = [];
-          var val = element.val().split(",");
-          $(element.val().split(",")).each(function (index,value) {
-              data.push({name: value});
-          });
-          callback(data);
-        }
+        });
       });
     }
     

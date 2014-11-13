@@ -451,6 +451,12 @@ def resolve_object(request, model, query, permission='base.view_resourcebase',
     permission_msg - optional message to use in 403
     """
     obj = get_object_or_404(model, **query)
+    
+    # first we check global permissions
+    if permission.split('.')[-1] == 'change_resourcebase_metadata' and (request.user.can_change_resourcebase_metadata or any(gm.group.can_change_resourcebase_metadata for gm in request.user.groupmember_set.all())):
+        return obj
+
+    # then we check granular permissions
     allowed = True
     obj_to_check = obj.get_self_resource()
     if permission.split('.')[-1] in ['change_layer_data', 'change_layer_style']:
