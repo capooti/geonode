@@ -26,8 +26,6 @@ SERVICE_TYPES = (
     ('WMS', _('Web Map Service')),
     ('CSW', _('Catalogue Service')),
     ('REST', _('ArcGIS REST Service')),
-    ('OGP', _('OpenGeoPortal')),
-    ('HGL', _('Harvard Geospatial Library')),
 )
 
 SERVICE_METHODS = (

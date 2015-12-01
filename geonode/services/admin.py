@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from geonode.services.models import Service
+from geonode.services.models import Service, ServiceLayer
 from geonode.base.admin import ResourceBaseAdminForm
 
 
@@ -16,4 +16,9 @@ class ServiceAdmin(admin.ModelAdmin):
     list_filter = ('type', 'method')
     form = ServiceAdminForm
 
+class ServiceLayerAdmin(admin.ModelAdmin):
+    list_display = ('typename', 'title', )
+    search_fields = ('typename', 'title', 'description',)
+
 admin.site.register(Service, ServiceAdmin)
+admin.site.register(ServiceLayer, ServiceLayerAdmin)

@@ -1,125 +1,87 @@
-{% extends "services/services_base.html" %}
+{% extends "layers/layer_base.html" %}
 {% load i18n %}
-{% load guardian_tags %}
+{% load bootstrap_tags %}
+{% load url from future %}
+{% load base_tags %}
+
+{% block title %}{{ service.title|default:service.name }} — {{ block.super }}{% endblock %}
+
 {% block head %}
-{% include "geonode/ext_header.html" %}
-{% include "geonode/app_header.html" %}
-{% include "geonode/geo_header.html" %}
 {{ block.super }}
-<script type="text/javascript">
-var app;
-{% autoescape off %}
-Ext.onReady(function() {
-
-{% if can_change_permissions %}
-       new GeoNode.WorldMapPermissionsEditor({
-                renderTo: "permissions_form",
-                submitTo: "{% url "geonode.services.views.ajax_service_permissions" service.id %}",
-                userLookup: "{% url "geonode.views.ajax_lookup" %}",
-                customGroup: "{{ customGroup }}",
-                permissions: {{ permissions_json }},
-        levels: {
-            'admin': 'layer_admin',
-                    'readwrite': 'layer_readwrite',
-                    'readonly': 'layer_readonly',
-                    'none': '_none'
-        },
-        listeners: {
-            updated: function(perms) {
-                var submitTo = "{% url "geonode.services.views.ajax_service_permissions" service.id %}";
-                Ext.Ajax.request({ url: submitTo, jsonData: perms.writePermissions() });
-            }
-        }
-    });
-    {% endif %}
-});
-{% endautoescape %}
-</script>
 {% endblock %}
 
-{% block body %}
-<div class="twocol">
-  <h3>{{service.title|default:service.name}}</h3>
-  <p><strong>{% trans "Name:" %}</strong> {{service.name}}</p>
-  <p><strong>{% trans "URL:" %}</strong> {{service.base_url}}</p>
-  <p><strong>{% trans "Abstract:" %}</strong> {{service.abstract}}</p>
-  <p><strong>{% trans "Keywords:" %}</strong> {{ service.keywords.all|join:", " }}</p>
-  <p><strong>{% trans "Contact:" %}</strong> <a href="{% url "profile_detail" service.owner.username %}">{{ service.owner }}</a></p>
 
-    {% autoescape off %}
-    {%  if services %}
-        <h3>{% trans "Services" %}</h3>
-        <p>{% trans "This CSW server contains the following services" %} </p>
-        <table>
-            <tr><th style="width:50%">Title</th><th>Description</th></tr>
-            {% for service in services %}
-                    <tr>
-                        <td><a href='{%  url "service_detail" service.id %}'>{{service.title}}</a></td>
-                        <td>{{service.abstract}}</td>
-                    </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
-    {% if layers %}
-    <h3>{% trans "Layers" %}</h3>
-    <p>{% trans "This Service contains the following layers" %} </p>
-    <table>
-        <tr><th style="width:50%">Title</th><th>Description</th></tr>
-        {% for layer in layers %}
-            {% if layer.group != "background" %}
-            <tr>
-                <td><a href='{{ layer.get_absolute_url }}'>{{layer.title}}</a></td>
-                <td>{{layer.abstract}}</td>
-            </tr>
-            {% endif %}
-        {% endfor %}
-        <tr>
-            <td colspan="2">
-                <div class="pagination">
-                    <span class="step-links">
-                    {% if layers.has_previous %}
-                        <a href="?page={{ layers.previous_page_number }}">previous</a>
-                    {% endif %}
+{% block body_class %}layers{% endblock %}
 
-                    <span class="current">
-                            Page {{ layers.number }} of {{ layers.paginator.num_pages }}.
-                    </span>
-
-                    {% if layers.has_next %}
-                        <a href="?page={{ layers.next_page_number }}">next</a>
-                    {% endif %}
-                    </span>
-                </div>
-            </td>
-
-        </tr>
-    </table>
-    {%  endif %}
-
-    {% endautoescape %}
-
+{% block body_outer %}
+<div class="page-header">
+  <h2 class="page-title">{{ service.title }}</h2>
 </div>
-{% endblock %}
-{% block sidebar %}
 
+<div class="row">
+  <div class="col-md-9">
 
-    {% get_obj_perms request.user for service as "resource_perms" %}
+    <article itemscope itemtype="http://schema.org/Dataset" class="description tab-pane active" id="info">
+      <dl class="dl-horizontal">
+        <dt>{% trans "Name" %}</dt>
+        <dd>{{ service.name }}</dd>
+        <dt>{% trans "URL" %}</dt>
+        <dd>{{ service.base_url }}</dd>
+        <dt>{% trans "Abstract" %}</dt>
+        <dd>{{ service.abstract }}</dd>
+        <dt>{% trans "Keywords" %}</dt>
+        <dd>{{ service.keywords.all|join:", " }}</dd>
+        <dt>{% trans "Contact" %}</dt>
+        <dd><a href="{% url "profile_detail" service.owner.username %}">{{ service.owner }}</a></dd>       
+      </dl>
+    </article>
 
-    {% if "change_service" in resource_perms or "remove_service" in resource_perms or "change_service_permissions" in resource_perms %}
+    <article id="attributes" class="tab-pane">
+
+        <h3>{% trans "Services" %}</h3>
+        <p>{% trans "This remote server contains the following services" %} </p>
+        <table class="table table-striped table-bordered table-condensed">
+          <thead>
+            <tr>
+              <th>{% trans "Title" %}</th>
+              <th>{% trans "Abstract" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for service_layer in service.servicelayer_set.all %}
+              <tr>
+                <td>
+                  {% if service_layer.layer %}
+                    <a href="{{ service_layer.layer.get_absolute_url }}">{{ service_layer.title }}</a>
+                  {% else %}
+                    {{ service_layer.title }}
+                  {% endif %}
+                </td>
+                <td>{{ service_layer.description }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+    </article>
+
+  </div> <!-- col-md-9 -->
+
+  <div class="col-md-3">
+
     <ul class="list-group">
         <li class="list-group-item"><h3>{% trans "Manage" %}</h3></li>
 
-        {% if "change_service" in resource_perms %}
+        <li class="list-group-item"><a class="btn btn-default btn-md btn-block" href="{% url "services" %}">{% trans "Browse other services" %}</a></li>
+
+        {% if service.owner = request.user %}
+            <li class="list-group-item"><a class="btn btn-default btn-md btn-block" href="{% url "register_layers" service.id %}">{% trans "Register Service Layers" %}</a></li>
             <li class="list-group-item"><a class="btn btn-default btn-md btn-block" href="{% url "edit_service" service.id %}">{% trans "Edit Service Metadata" %}</a></li>
-        {% endif %}
-        {% if  "remove_service" or "delete_service" in resource_perms %}
             <li class="list-group-item"><a class="btn btn-default btn-md btn-block" href="{% url "remove_service" service.id %}">{% trans "Remove Service" %}</a></li>
         {% endif %}
       </ul>
-    {% endif %}
+    
+  </div> <!-- col-md-3 -->
 
-
-
-
-
+</div> <!-- row -->
 {% endblock %}
