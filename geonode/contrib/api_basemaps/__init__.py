@@ -26,6 +26,7 @@ from geonode.settings import (
     THUNDERFOREST_BASEMAPS,
     MAPBOX_ACCESS_TOKEN,
     BING_API_KEY,
+    GOOGLE_API_KEY,
 )
 
 if ALT_OSM_BASEMAPS:
@@ -61,5 +62,11 @@ if BING_API_KEY is not None:
 if MAPBOX_ACCESS_TOKEN is not None:
     try:
         from mapbox import *
+    except ImportError:
+        pass
+
+if GOOGLE_API_KEY is not None:
+    try:
+        from google import *
     except ImportError:
         pass

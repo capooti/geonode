@@ -2,6 +2,8 @@
 <script type="text/javascript" src="{{ STATIC_URL }}geoexplorer/externals/ext/adapter/ext/ext-base.js?v={{ VERSION }}"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}geoexplorer/externals/ext/ext-all.js?v={{ VERSION }}"></script>
 
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQKt82Dw4wfyFqGiEgYD1yzj4KB7JCPzA"></script>
+
 <script type="text/javascript">
   Ext.Ajax.defaultHeaders = { 'X-CSRFToken': '{{ csrf_token|escapejs }}' };
   Ext.BLANK_IMAGE_URL = "{{ STATIC_URL }}geoexplorer/externals/ext/resources/images/default/s.gif";
