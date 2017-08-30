@@ -293,6 +293,7 @@ GEONODE_CONTRIB_APPS = (
     # 'geonode.contrib.slack',
     'geonode.contrib.metadataxsl',
     'geonode.contrib.api_basemaps',
+    'geonode.contrib.createlayer',
 )
 
 # Uncomment the following line to enable contrib apps
