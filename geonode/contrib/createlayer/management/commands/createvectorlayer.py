@@ -56,8 +56,5 @@ class Command(BaseCommand):
         user = get_valid_user(username)
         title = options.get('title')
         geometry_type = options.get('geometry')
-        if geometry_type not in ('Point', 'LineString', 'Polygon'):
-            print '-g, --geometry must be Point, LineString or Polygon'
-            sys.exit(1)
         attributes = options.get('attributes')
         create_layer(name, title, user, geometry_type, attributes)

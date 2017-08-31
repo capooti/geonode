@@ -24,38 +24,41 @@ import logging
 import json
 
 from geoserver.catalog import Catalog
+from geoserver.catalog import FailedRequestError
 
 from geonode import GeoNodeException
 from geonode.layers.models import Layer
+from geonode.people.models import Profile
 from geonode.geoserver.helpers import ogc_server_settings
 
 
 logger = logging.getLogger(__name__)
 
-def create_layer(name, title, owner, geometry_type, attributes=None):
+def create_layer(name, title, owner_name, geometry_type, attributes=None):
     """
     Create an empty layer in GeoServer and register it in GeoNode.
     """
-    if not ogc_server_settings.DATASTORE:
-        msg = ("To use the createlayer application you must set ogc_server_settings.datastore_db['ENGINE']"
-                " to 'django.contrib.gis.db.backends.postgis")
+    # first validate parameters
+    if geometry_type not in ('Point', 'LineString', 'Polygon'):
+        msg = 'geometry must be Point, LineString or Polygon'
         logger.error(msg)
         raise GeoNodeException(msg)
-    else:
-        store_name = ogc_server_settings.DATASTORE
+    # we can proceed
     try:
         print 'Creating the layer in GeoServer'
-        workspace, datastore = create_gs_layer(store_name, name, title, geometry_type, attributes)
+        workspace, datastore = create_gs_layer(name, title, geometry_type, attributes)
         print 'Creating the layer in GeoNode'
-        create_gn_layer(workspace, datastore, name, title, owner)
+        create_gn_layer(workspace, datastore, name, title, owner_name)
     except Exception as e:
         print '%s (%s)' % (e.message, type(e))
 
 
-def create_gn_layer(workspace, datastore, name, title, owner):
+def create_gn_layer(workspace, datastore, name, title, owner_name):
     """
     Associate a layer in GeoNode for a given layer in GeoServer.
     """
+    owner = Profile.objects.get(username=owner_name)
+    
     layer, created = Layer.objects.create(
         name=name,
         workspace=workspace.name,
@@ -125,7 +128,51 @@ def get_attributes(geometry_type, json_fields=None):
     return lfields
 
 
-def create_gs_layer(store_name, name, title, geometry_type, attributes=None):
+def get_or_create_datastore(cat, workspace=None, charset="UTF-8"):
+    """
+    Get a PostGIS database store or create it in GeoServer if does not exist.
+    """
+
+    # TODO refactor this and geoserver.helpers._create_db_featurestore
+    dsname = ogc_server_settings.DATASTORE
+    if not ogc_server_settings.DATASTORE:
+        msg = ("To use the createlayer application you must set ogc_server_settings.datastore_db['ENGINE']"
+                " to 'django.contrib.gis.db.backends.postgis")
+        logger.error(msg)
+        raise GeoNodeException(msg)
+    else:
+        store_name = ogc_server_settings.DATASTORE
+
+    try:
+        ds = cat.get_store(dsname, workspace)
+    except FailedRequestError:
+        ds = cat.create_datastore(dsname, workspace=workspace)
+
+    db = ogc_server_settings.datastore_db
+    ds.connection_parameters.update(
+        {'validate connections': 'true',
+         'max connections': '10',
+         'min connections': '1',
+         'fetch size': '1000',
+         'host': db['HOST'],
+         'port': db['PORT'] if isinstance(
+             db['PORT'], basestring) else str(db['PORT']) or '5432',
+         'database': db['NAME'],
+         'user': db['USER'],
+         'passwd': db['PASSWORD'],
+         'dbtype': 'postgis'}
+    )
+
+    cat.save(ds)
+
+    # we need to reload the ds as gsconfig-1.0.6 apparently does not populate ds.type
+    # using create_datastore (TODO fix this in gsconfig)
+    ds = cat.get_store(dsname, workspace)
+
+    return ds
+
+
+def create_gs_layer(name, title, geometry_type, attributes=None):
     """
     Create an empty PostGIS layer in GeoServer with a given name, title,
     geometry_type and attributes.
@@ -138,7 +185,9 @@ def create_gs_layer(store_name, name, title, geometry_type, attributes=None):
 
     # get workspace and store
     workspace = cat.get_default_workspace()
-    datastore = cat.get_store(store_name, workspace)
+
+    # get (or create the datastore)
+    datastore = get_or_create_datastore(cat, workspace)
 
     # check if datastore is of PostGIS type
     if datastore.type != 'PostGIS':
