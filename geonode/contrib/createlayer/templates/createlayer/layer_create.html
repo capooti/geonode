@@ -1,0 +1,62 @@
+{% extends "geonode_base.html" %}
+{% load url from future %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block title %} {% trans "Create Layer"  %} - {{ block.super }}  {% endblock %}
+
+{% block body_class %}layer create{% endblock %}
+
+
+{% block head %}
+
+{{ block.super }}
+{% endblock %}
+
+{% block body_outer %}
+
+<div class="page-header">
+  <a href="{% url "layer_browse" %}" class="btn btn-primary pull-right">{% trans "Explore Layers" %}</a>
+  <h2 class="page-title">{% trans "Create an empty layer" %}</h2>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+
+    <section>
+      <form id="layer_create_form"  method="post" action="{% url "layer_create" %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" id="layer-create-button" class="btn btn-danger">{% trans "Create" %}</button>
+      </form>
+    </section>
+
+  </div>
+
+  {% if GEONODE_SECURITY_ENABLED %}
+  <div class="col-md-4">
+    <h3>{% trans "Permissions"  %}</h3>
+    <form id="permission_form">
+      {% include "_permissions.html" %}
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+
+{% block extra_script %}
+
+{{ block.super }}
+
+{% if GEONODE_SECURITY_ENABLED %}
+  {% include "_permissions_form_js.html" %}
+{% endif %}
+
+<script type="text/javascript">
+    $('#layer_create_form').submit(function(){
+      $('#permissions').val(JSON.stringify(permissionsString($('#permission_form'),'base')));
+    });
+</script>
+
+{% endblock extra_script %}

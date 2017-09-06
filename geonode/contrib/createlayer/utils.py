@@ -23,6 +23,8 @@ import uuid
 import logging
 import json
 
+from django.db.models import signals
+
 from geoserver.catalog import Catalog
 from geoserver.catalog import FailedRequestError
 
@@ -48,9 +50,10 @@ def create_layer(name, title, owner_name, geometry_type, attributes=None):
         print 'Creating the layer in GeoServer'
         workspace, datastore = create_gs_layer(name, title, geometry_type, attributes)
         print 'Creating the layer in GeoNode'
-        create_gn_layer(workspace, datastore, name, title, owner_name)
+        return create_gn_layer(workspace, datastore, name, title, owner_name)
     except Exception as e:
         print '%s (%s)' % (e.message, type(e))
+        return None
 
 
 def create_gn_layer(workspace, datastore, name, title, owner_name):
@@ -58,8 +61,8 @@ def create_gn_layer(workspace, datastore, name, title, owner_name):
     Associate a layer in GeoNode for a given layer in GeoServer.
     """
     owner = Profile.objects.get(username=owner_name)
-    
-    layer, created = Layer.objects.create(
+
+    layer = Layer.objects.create(
         name=name,
         workspace=workspace.name,
         store=datastore.name,
@@ -73,6 +76,7 @@ def create_gn_layer(workspace, datastore, name, title, owner_name):
         bbox_y0=-90,
         bbox_y1=90
     )
+    return layer
 
 
 def get_attributes(geometry_type, json_fields=None):

@@ -81,7 +81,7 @@ class CreateLayerCoreTest(TestCase):
 
         create_layer(
             layer_name,
-            'A layer for points',
+            layer_title,
             'bobby',
             'Point'
         )
@@ -125,8 +125,35 @@ class CreateLayerCoreTest(TestCase):
         """
         Try creating a layer with attributes.
         """
-        # TODO
-        pass
+
+        attributes = """
+        {
+          "field_str": "string",
+          "field_int": "integer",
+          "field_date": "date",
+          "field_float": "float"
+        }
+        """
+
+        layer_name = 'attributes_layer'
+        layer_title = 'A layer with attributes'
+
+        create_layer(
+            layer_name,
+            layer_title,
+            'bobby',
+            'Point',
+            attributes
+        )
+
+        cat = gs_catalog
+        layer = Layer.objects.get(name=layer_name)
+        gs_layer = cat.get_layer(layer_name)
+        resource = gs_layer.resource
+
+        # we must have one attibute for the geometry, and 4 other ones
+        self.assertEqual(len(resource.attributes), 5)
+
 
     def test_layer_creation_with_permissions(self):
         """
