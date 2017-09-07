@@ -63,6 +63,7 @@ class CreateLayerCoreTest(TestCase):
 
     def setUp(self):
         # createlayer must use postgis as a datastore
+        # set temporary settings to use a postgis datastore
         DATASTORE_URL = 'postgis://geonode:geonode@localhost:5432/datastore'
         postgis_db = dj_database_url.parse(DATASTORE_URL, conn_max_age=600)
         settings.DATABASES['datastore'] = postgis_db
@@ -70,7 +71,9 @@ class CreateLayerCoreTest(TestCase):
         pass
 
     def tearDown(self):
-        # TODO move to original settings
+        # move to original settings
+        settings.OGC_SERVER['default']['DATASTORE'] = ''
+        del settings.DATABASES['datastore']
         # TODO remove stuff from django and geoserver catalog
         pass
 
@@ -80,7 +83,7 @@ class CreateLayerCoreTest(TestCase):
 
     def test_layer_creation(self):
         """
-        Try creting a layer.
+        Try creating a layer.
         """
 
         layer_name = 'point_layer'
@@ -117,7 +120,7 @@ class CreateLayerCoreTest(TestCase):
 
     def test_layer_creation_with_wrong_geometry_type(self):
         """
-        Try creting a layer with uncorrect geometry type.
+        Try creating a layer with uncorrect geometry type.
         """
         with self.assertRaises(GeoNodeException):
             create_layer(
