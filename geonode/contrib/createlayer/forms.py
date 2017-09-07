@@ -27,6 +27,7 @@ GEOMETRY_TYPES = (
     ('Polygon', 'Polygons'),
 )
 
+
 class NewLayerForm(forms.Form):
     """
     A form to create an empty layer in PostGIS.

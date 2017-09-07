@@ -35,14 +35,21 @@ from .utils import create_layer
 How to run the tests
 --------------------
 
-$ sudo su postgres
-$ psql
-postgres=# CREATE USER geonode with password 'geonode';
-postgres=# ALTER USER geonode WITH LOGIN;
-postgres=# ALTER USER geonode WITH SUPERUSER;
-postgres=# CREATE DATABASE datastore WITH OWNER geonode;
-postgres=# \c datastore
-datastore=# CREATE EXTENSION postgis;
+Create a user and database for the datastore:
+
+    $ sudo su postgres
+    $ psql
+    postgres=# CREATE USER geonode with password 'geonode';
+    postgres=# ALTER USER geonode WITH LOGIN;
+    postgres=# ALTER USER geonode WITH SUPERUSER;
+    postgres=# CREATE DATABASE datastore WITH OWNER geonode;
+    postgres=# \c datastore
+    datastore=# CREATE EXTENSION postgis;
+
+Add 'geonode.contrib.createlayer' in GEONODE_CONTRIB_APPS
+
+Then, as usual, run "paver run_tests"
+
 """
 
 
@@ -108,7 +115,6 @@ class CreateLayerCoreTest(TestCase):
         response = self.client.get(reverse('layer_detail', args=('geonode:%s' % layer_name,)))
         self.assertEqual(response.status_code, 200)
 
-
     def test_layer_creation_with_wrong_geometry_type(self):
         """
         Try creting a layer with uncorrect geometry type.
@@ -119,7 +125,6 @@ class CreateLayerCoreTest(TestCase):
                 'A layer with wrong geometry',
                 'bobby',
                 'wrong_geometry')
-
 
     def test_layer_creation_with_attributes(self):
         """
@@ -147,13 +152,11 @@ class CreateLayerCoreTest(TestCase):
         )
 
         cat = gs_catalog
-        layer = Layer.objects.get(name=layer_name)
         gs_layer = cat.get_layer(layer_name)
         resource = gs_layer.resource
 
         # we must have one attibute for the geometry, and 4 other ones
         self.assertEqual(len(resource.attributes), 5)
-
 
     def test_layer_creation_with_permissions(self):
         """

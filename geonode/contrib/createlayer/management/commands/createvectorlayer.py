@@ -18,9 +18,7 @@
 #
 #########################################################################
 
-import sys
-
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from geonode.people.utils import get_valid_user
 from geonode.contrib.createlayer.utils import create_layer
@@ -34,21 +32,22 @@ class Command(BaseCommand):
         parser.add_argument('name', type=str)
         # named (optional arguments)
         parser.add_argument('--user',
-            help='Name of the user account which should own the created layer')
+                            help='Name of the user account which should own the created layer')
         parser.add_argument('--geometry',
-            default='Point',
-            help=('Geometry type of the layer to be created. '
-                  'Can be Point, LineString or Polygon. Default is Point')
-        )
+                            default='Point',
+                            help=('Geometry type of the layer to be created. '
+                                  'Can be Point, LineString or Polygon. Default is Point')
+                            )
         parser.add_argument('--attributes',
-            help=('A json representation of the attributes to create. '
-                  'Example: { "field_str": "string", "field_int": "integer", "field_date": "date", "field_float": "float"}')
-        )
+                            help=('A json representation of the attributes to create. '
+                                  'Example: '
+                                  '{ "field_str": "string", "field_int": "integer", '
+                                  '"field_date": "date", "field_float": "float"}')
+                            )
         parser.add_argument('--title',
-            default='No title',
-            help='Title for the layer to be created.'
-        )
-
+                            default='No title',
+                            help='Title for the layer to be created.'
+                            )
 
     def handle(self, *args, **options):
         name = options.get('name')

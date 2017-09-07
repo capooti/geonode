@@ -23,7 +23,6 @@ import uuid
 import logging
 import json
 
-from django.db.models import signals
 from django.template.defaultfilters import slugify
 
 from geoserver.catalog import Catalog
@@ -36,6 +35,7 @@ from geonode.geoserver.helpers import ogc_server_settings
 
 
 logger = logging.getLogger(__name__)
+
 
 def create_layer(name, title, owner_name, geometry_type, attributes=None):
     """
@@ -142,11 +142,9 @@ def get_or_create_datastore(cat, workspace=None, charset="UTF-8"):
     dsname = ogc_server_settings.DATASTORE
     if not ogc_server_settings.DATASTORE:
         msg = ("To use the createlayer application you must set ogc_server_settings.datastore_db['ENGINE']"
-                " to 'django.contrib.gis.db.backends.postgis")
+               " to 'django.contrib.gis.db.backends.postgis")
         logger.error(msg)
         raise GeoNodeException(msg)
-    else:
-        store_name = ogc_server_settings.DATASTORE
 
     try:
         ds = cat.get_store(dsname, workspace)
@@ -210,31 +208,32 @@ def create_gs_layer(name, title, geometry_type, attributes=None):
 
     attributes = get_attributes(geometry_type, attributes)
     attributes_block = "<attributes>"
-    empty_opts = {}
     for spec in attributes:
         att_name, binding, opts = spec
         nillable = opts.get("nillable", False)
         attributes_block += ("<attribute>"
-                                "<name>{name}</name>"
-                                "<binding>{binding}</binding>"
-                                "<nillable>{nillable}</nillable>"
-                                "</attribute>").format(name=att_name, binding=binding, nillable=nillable)
+                             "<name>{name}</name>"
+                             "<binding>{binding}</binding>"
+                             "<nillable>{nillable}</nillable>"
+                             "</attribute>").format(name=att_name, binding=binding, nillable=nillable)
     attributes_block += "</attributes>"
 
     # TODO implement others srs and not only EPSG:4326
     xml = ("<featureType>"
-            "<name>{name}</name>"
-            "<nativeName>{native_name}</nativeName>"
-            "<title>{title}</title>"
-            "<srs>EPSG:4326</srs>"
-            "<latLonBoundingBox><minx>-180</minx><maxx>180</maxx><miny>-90</miny><maxy>90</maxy><crs>EPSG:4326</crs></latLonBoundingBox>"
-            "{attributes}"
-            "</featureType>").format(
-                name=name.encode('UTF-8','strict'), native_name=native_name.encode('UTF-8','strict'),
-                title=title.encode('UTF-8','strict'),
+           "<name>{name}</name>"
+           "<nativeName>{native_name}</nativeName>"
+           "<title>{title}</title>"
+           "<srs>EPSG:4326</srs>"
+           "<latLonBoundingBox><minx>-180</minx><maxx>180</maxx><miny>-90</miny><maxy>90</maxy>"
+           "<crs>EPSG:4326</crs></latLonBoundingBox>"
+           "{attributes}"
+           "</featureType>").format(
+                name=name.encode('UTF-8', 'strict'), native_name=native_name.encode('UTF-8', 'strict'),
+                title=title.encode('UTF-8', 'strict'),
                 attributes=attributes_block)
 
-    url = '%s/workspaces/%s/datastores/%s/featuretypes' % (ogc_server_settings.internal_rest, workspace.name, datastore.name)
+    url = ('%s/workspaces/%s/datastores/%s/featuretypes'
+           % (ogc_server_settings.internal_rest, workspace.name, datastore.name))
     headers = {'Content-Type': 'application/xml'}
     req = requests.post(url, data=xml, headers=headers, auth=(gs_user, gs_password))
     if req.status_code != 201:
