@@ -30,6 +30,7 @@ from geoserver.catalog import FailedRequestError
 
 from geonode import GeoNodeException
 from geonode.layers.models import Layer
+from geonode.layers.utils import get_valid_name
 from geonode.people.models import Profile
 from geonode.geoserver.helpers import ogc_server_settings
 
@@ -46,6 +47,7 @@ def create_layer(name, title, owner_name, geometry_type, attributes=None):
         msg = 'geometry must be Point, LineString or Polygon'
         logger.error(msg)
         raise GeoNodeException(msg)
+    name = get_valid_name(name)
     # we can proceed
     print 'Creating the layer in GeoServer'
     workspace, datastore = create_gs_layer(name, title, geometry_type, attributes)
