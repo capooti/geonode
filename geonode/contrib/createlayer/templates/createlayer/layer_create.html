@@ -1,6 +1,7 @@
 {% extends "geonode_base.html" %}
 {% load url from future %}
 {% load i18n %}
+{% load bootstrap_tags %}
 {% load staticfiles %}
 
 {% block title %} {% trans "Create Layer"  %} - {{ block.super }}  {% endblock %}
@@ -23,11 +24,23 @@
 <div class="row">
   <div class="col-md-8">
 
+    {% if error %}
+    <div id="errors" class="alert alert-danger">
+      <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
     <section>
-      <form id="layer_create_form"  method="post" action="{% url "layer_create" %}">
+      <form id="layer-create-form"  method="post" action="{% url "layer_create" %}">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" id="layer-create-button" class="btn btn-danger">{% trans "Create" %}</button>
+        {{ form|as_bootstrap }}
+
+        <div class="input-attrs-wrap">
+          <button id="add-attr-button" class="add-attr-button btn btn-primary">{% trans "Add Attribute" %}</button>
+        </div>
+
+        <button type="submit" id="layer-create-button" class="btn btn-danger" style="margin-top:20px">{% trans "Create" %}</button>
+
       </form>
     </section>
 
@@ -54,9 +67,46 @@
 {% endif %}
 
 <script type="text/javascript">
-    $('#layer_create_form').submit(function(){
-      $('#permissions').val(JSON.stringify(permissionsString($('#permission_form'),'base')));
+
+    // code inspired by https://www.sanwebe.com/2013/03/addremove-input-fields-dynamically-with-jquery
+    var max_attrs = 50;
+
+    var attr_type_select = '<select class="form-control"" \
+                                  name="attr-type" style="margin-top:15px"> \
+                                <option value="string">String</option> \
+                                <option value="integer">Integer</option> \
+                                <option value="float">Float</option> \
+                                <option value="date">Date</option> \
+                            </select>'
+
+    var x = 1;
+    $(".add-attr-button").click(function(e){
+        e.preventDefault();
+        if(x < max_attrs){
+            $(".input-attrs-wrap").append('<div class="attr-definition"><input type="text" class="form-control" style="margin-top:15px" />' + attr_type_select + '<a href="#" class="remove-attr">Remove</a></div>');
+            x++;
+        }
     });
+
+    $(".input-attrs-wrap").on("click", ".remove-attr", function(e){
+        e.preventDefault();
+        $(this).parent('div').remove();
+        x--;
+    })
+
+    // copy permissions and attributes
+    $('#layer-create-form').submit(function(){
+      $('#permissions').val(JSON.stringify(permissionsString($('#permission_form'),'base')));
+
+      var attrs = {};
+      $('.attr-definition').each(function(i, obj) {
+          attr_name = obj.childNodes[0].value;
+          attr_type = obj.childNodes[1].value;
+          attrs[attr_name] = attr_type;
+      });
+      $('#attributes').val(JSON.stringify(attrs));
+    });
+
 </script>
 
 {% endblock extra_script %}

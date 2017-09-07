@@ -41,3 +41,10 @@ class NewLayerForm(forms.Form):
                 'name': 'permissions',
                 'id': 'permissions'}),
         required=True)
+
+    attributes = forms.CharField(
+        widget=forms.HiddenInput(
+            attrs={
+                'name': 'attributes',
+                'id': 'attributes'}),
+        required=True)

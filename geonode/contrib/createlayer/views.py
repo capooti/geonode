@@ -35,23 +35,29 @@ def layer_create(request, template='createlayer/layer_create.html'):
     """
     Create an empty layer.
     """
+    error = None
     if request.method == 'POST':
         form = NewLayerForm(request.POST)
         if form.is_valid():
-            name = form.cleaned_data['name']
-            name = slugify(name.replace(".", "_"))
-            title = form.cleaned_data['title']
-            geometry_type = form.cleaned_data['geometry_type']
-            permissions = form.cleaned_data["permissions"]
-            layer = create_layer(name, title, request.user.username, geometry_type)
-            layer.set_permissions(json.loads(permissions))
-            return redirect(layer)
+            try:
+                name = form.cleaned_data['name']
+                name = slugify(name.replace(".", "_"))
+                title = form.cleaned_data['title']
+                geometry_type = form.cleaned_data['geometry_type']
+                attributes = form.cleaned_data['attributes']
+                permissions = form.cleaned_data["permissions"]
+                layer = create_layer(name, title, request.user.username, geometry_type, attributes)
+                layer.set_permissions(json.loads(permissions))
+                return redirect(layer)
+            except Exception as e:
+                error = '%s (%s)' % (e.message, type(e))
     else:
         form = NewLayerForm()
 
     ctx = {
         'form': form,
         'is_layer': True,
+        'error': error,
     }
 
     return render_to_response(template, RequestContext(request, ctx))

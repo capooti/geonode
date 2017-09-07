@@ -24,6 +24,7 @@ import logging
 import json
 
 from django.db.models import signals
+from django.template.defaultfilters import slugify
 
 from geoserver.catalog import Catalog
 from geoserver.catalog import FailedRequestError
@@ -46,14 +47,10 @@ def create_layer(name, title, owner_name, geometry_type, attributes=None):
         logger.error(msg)
         raise GeoNodeException(msg)
     # we can proceed
-    try:
-        print 'Creating the layer in GeoServer'
-        workspace, datastore = create_gs_layer(name, title, geometry_type, attributes)
-        print 'Creating the layer in GeoNode'
-        return create_gn_layer(workspace, datastore, name, title, owner_name)
-    except Exception as e:
-        print '%s (%s)' % (e.message, type(e))
-        return None
+    print 'Creating the layer in GeoServer'
+    workspace, datastore = create_gs_layer(name, title, geometry_type, attributes)
+    print 'Creating the layer in GeoNode'
+    return create_gn_layer(workspace, datastore, name, title, owner_name)
 
 
 def create_gn_layer(workspace, datastore, name, title, owner_name):
@@ -79,13 +76,13 @@ def create_gn_layer(workspace, datastore, name, title, owner_name):
     return layer
 
 
-def get_attributes(geometry_type, json_fields=None):
+def get_attributes(geometry_type, json_attrs=None):
     """
-    Convert a json representation of fields to a Python representation.
+    Convert a json representation of attributes to a Python representation.
 
     parameters:
 
-    json_fields
+    json_attrs
     {
       "field_str": "string",
       "field_int": "integer",
@@ -105,31 +102,35 @@ def get_attributes(geometry_type, json_fields=None):
     ]
     """
 
-    lfields = []
-    gfield = []
-    gfield.append('the_geom')
-    gfield.append('com.vividsolutions.jts.geom.%s' % geometry_type)
-    gfield.append({'nillable': False})
-    lfields.append(gfield)
-    if json_fields:
-        jfields = json.loads(json_fields)
-        for jfield in jfields.items():
-            lfield = []
-            field_name = jfield[0]
-            field_type = jfield[1].lower()
-            if field_type not in ('float', 'date', 'string', 'integer'):
-                msg = '%s is not a valid type for field %s' % (field_type, field_name)
+    lattrs = []
+    gattr = []
+    gattr.append('the_geom')
+    gattr.append('com.vividsolutions.jts.geom.%s' % geometry_type)
+    gattr.append({'nillable': False})
+    lattrs.append(gattr)
+    if json_attrs:
+        jattrs = json.loads(json_attrs)
+        for jattr in jattrs.items():
+            lattr = []
+            attr_name = slugify(jattr[0])
+            attr_type = jattr[1].lower()
+            if len(attr_name) == 0:
+                msg = 'You must provide an attribute name for attribute of type %s' % (attr_type)
                 logger.error(msg)
                 raise GeoNodeException(msg)
-            if field_type == 'date':
-                field_type = 'java.util.%s' % field_type[:1].upper() + field_type[1:]
+            if attr_type not in ('float', 'date', 'string', 'integer'):
+                msg = '%s is not a valid type for attribute %s' % (attr_type, attr_name)
+                logger.error(msg)
+                raise GeoNodeException(msg)
+            if attr_type == 'date':
+                attr_type = 'java.util.%s' % attr_type[:1].upper() + attr_type[1:]
             else:
-                field_type = 'java.lang.%s' % field_type[:1].upper() + field_type[1:]
-            lfield.append(field_name)
-            lfield.append(field_type)
-            lfield.append({'nillable': True})
-            lfields.append(lfield)
-    return lfields
+                attr_type = 'java.lang.%s' % attr_type[:1].upper() + attr_type[1:]
+            lattr.append(attr_name)
+            lattr.append(attr_type)
+            lattr.append({'nillable': True})
+            lattrs.append(lattr)
+    return lattrs
 
 
 def get_or_create_datastore(cat, workspace=None, charset="UTF-8"):
