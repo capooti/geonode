@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 #########################################################################
 #
 # Copyright (C) 2016 OSGeo
@@ -18,23 +19,10 @@
 #
 #########################################################################
 
-import os
+from django.conf.urls import url
 
-__version__ = (2, 9, 0, 'unstable', 0)
+from geonode.contrib.ows_api.views import ows_endpoints
 
-
-class GeoNodeException(Exception):
-    """Base class for exceptions in this module."""
-    pass
-
-
-def get_version():
-    import geonode.version
-    return geonode.version.get_version(__version__)
-
-
-def main(global_settings, **settings):
-    from django.core.wsgi import get_wsgi_application
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings.get('django_settings'))
-    app = get_wsgi_application()
-    return app
+urlpatterns = [
+    url(r'^api/ows_endpoints/', ows_endpoints),
+]

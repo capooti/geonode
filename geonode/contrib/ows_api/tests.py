@@ -18,23 +18,32 @@
 #
 #########################################################################
 
-import os
+import json
 
-__version__ = (2, 9, 0, 'unstable', 0)
+from django.test import TestCase
 
-
-class GeoNodeException(Exception):
-    """Base class for exceptions in this module."""
-    pass
+from geonode.base.populate_test_data import create_models
+from geonode.base.models import Link
 
 
-def get_version():
-    import geonode.version
-    return geonode.version.get_version(__version__)
+class OWSApiTestCase(TestCase):
 
+    fixtures = ['initial_data.json']
 
-def main(global_settings, **settings):
-    from django.core.wsgi import get_wsgi_application
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings.get('django_settings'))
-    app = get_wsgi_application()
-    return app
+    def setUp(self):
+        super(OWSApiTestCase, self).setUp()
+        create_models(type='layer')
+        # prepare some WMS endpoints
+        q = Link.objects.all()
+        for l in q[:3]:
+            l.link_type = 'OGC:WMS'
+            l.save()
+
+    def test_ows_api(self):
+        url = '/api/ows_endpoints/'
+        q = Link.objects.filter(link_type__startswith="OGC:")
+        self.assertEqual(q.count(), 3)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertTrue(len(data['data']), q.count())

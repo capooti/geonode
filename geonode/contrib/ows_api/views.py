@@ -18,23 +18,25 @@
 #
 #########################################################################
 
-import os
+from django.views.generic import View
 
-__version__ = (2, 9, 0, 'unstable', 0)
-
-
-class GeoNodeException(Exception):
-    """Base class for exceptions in this module."""
-    pass
+from geonode.base.enumerations import LINK_TYPES as _LT
+from geonode.base.models import Link
+from geonode.utils import json_response
 
 
-def get_version():
-    import geonode.version
-    return geonode.version.get_version(__version__)
+LINK_TYPES = [L for L in _LT if L.startswith("OGC:")]
 
 
-def main(global_settings, **settings):
-    from django.core.wsgi import get_wsgi_application
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings.get('django_settings'))
-    app = get_wsgi_application()
-    return app
+class OWSListView(View):
+
+    def get(self, request):
+        out = {'success': True}
+        data = []
+        out['data'] = data
+        for link in Link.objects.filter(link_type__in=LINK_TYPES).distinct('url'):
+            data.append({'url': link.url, 'type': link.link_type})
+        return json_response(out)
+
+
+ows_endpoints = OWSListView.as_view()
