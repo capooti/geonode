@@ -4,7 +4,7 @@ from django.views.generic.base import RedirectView
 from geonode.maps.views import snapshot_create
 
 from .views import (ajax_snapshot_history, layer_searchable_fields,
-                    ajax_layer_update, ajax_layer_edit_check,
+                    ajax_url_lookup, ajax_layer_update, ajax_layer_edit_check,
                     ajax_layer_edit_style_check, upload_layer,
                     ajax_increment_layer_stats, add_layer_wm,
                     new_map_wm, new_map_json_wm, map_view_wm, map_json_wm,
@@ -32,6 +32,7 @@ urlpatterns = [
     # api
     url(r'^worldmap/api/', include(wm_api.urls)),
     # maps
+    url(r'^maps/checkurl/?$', ajax_url_lookup, name='ajax_url_lookup'),
     url(r'^maps/print/?$', printmap, name='printmap'),
     url(r'^maps/new$', new_map_wm, name="new_map_wm"),
     url(r'^maps/add_layer$', add_layer_wm, name='add_layer_wm'),

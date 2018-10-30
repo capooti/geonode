@@ -112,6 +112,36 @@ def proxy(request):
     return response
 
 
+def ajax_url_lookup(request):
+    if request.method != 'POST':
+        return HttpResponse(
+            content='ajax user lookup requires HTTP POST',
+            status=405,
+            content_type='text/plain'
+        )
+    elif 'query' not in request.POST:
+        return HttpResponse(
+            content='use a field named "query" to specify a prefix to filter urls',
+            content_type='text/plain')
+    if request.POST['query'] != '':
+        maps = Map.objects.filter(urlsuffix__startswith=request.POST['query'])
+        if request.POST['mapid'] != '':
+            maps = maps.exclude(id=request.POST['mapid'])
+        json_dict = {
+            'urls': [({'url': m.urlsuffix}) for m in maps],
+            'count': maps.count(),
+        }
+    else:
+        json_dict = {
+            'urls': [],
+            'count': 0,
+        }
+    return HttpResponse(
+        content=json.dumps(json_dict),
+        content_type='text/plain'
+    )
+
+
 def ajax_snapshot_history(request, mapid):
     map_obj = Map.objects.get(pk=mapid)
     history = [snapshot.json() for snapshot in map_obj.snapshots]
