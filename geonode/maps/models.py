@@ -325,7 +325,7 @@ class Map(ResourceBase, GXPMapBase):
     def snapshots(self):
         snapshots = MapSnapshot.objects.exclude(
             user=None).filter(
-            map__id=self.map.id)
+            map__id=self.map.id).order_by('created_dttm')
         return [snapshot for snapshot in snapshots]
 
     @property
