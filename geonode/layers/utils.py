@@ -905,6 +905,7 @@ def create_thumbnail(instance, thumbnail_remote_url, thumbnail_create_url=None,
     elif isinstance(instance, Map):
         thumbnail_name = 'map-%s-thumb.png' % instance.uuid
     thumbnail_path = os.path.join(thumbnail_dir, thumbnail_name)
+
     if overwrite or not storage.exists(thumbnail_path):
         BBOX_DIFFERENCE_THRESHOLD = 1e-5
 
@@ -974,6 +975,8 @@ def create_thumbnail(instance, thumbnail_remote_url, thumbnail_create_url=None,
                                 ]
                             if 'crs' in request_body and 'srid' not in request_body:
                                 request_body['srid'] = request_body['crs']
+                            if instance.default_style:
+                                params['styles'] = instance.default_style.name
                         elif instance.alternate:
                             request_body['layers'] = instance.alternate
 
